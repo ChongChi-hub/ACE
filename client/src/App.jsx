@@ -10,6 +10,7 @@ import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Members } from './pages/Members';
 import { Fund } from './pages/Fund';
+import { TtvRace } from './pages/TtvRace';
 import { Accounts } from './pages/Accounts';
 import { Logs } from './pages/Logs';
 import { Profile } from './pages/Profile';
@@ -43,6 +44,7 @@ export function App() {
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/members" element={<Members />} />
                   <Route path="/fund" element={<Fund />} />
+                  <Route path="/ttv-race" element={<TtvRace />} />
                   <Route path="/profile" element={<Profile />} />
 
                   {/* Leader only routes */}

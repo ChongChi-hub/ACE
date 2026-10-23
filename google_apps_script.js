@@ -57,7 +57,7 @@ function handleRequest(e, method) {
     // Dùng LockService để ngăn chặn ghi đè đồng thời (race condition)
     var lock = LockService.getScriptLock();
     var hasLock = false;
-    var writeActions = ['add_member', 'edit_member', 'delete_member', 'record_fund', 'create_account', 'update_account_fund_permission', 'update_account_member_permission', 'update_account_status', 'reset_password', 'delete_account', 'change_password'];
+    var writeActions = ['add_member', 'edit_member', 'delete_member', 'record_fund', 'create_account', 'update_account_fund_permission', 'update_account_member_permission', 'update_account_status', 'reset_password', 'delete_account', 'change_password', 'record_ttv'];
     
     if (writeActions.indexOf(action) !== -1) {
       try {
@@ -138,8 +138,12 @@ function handleRequest(e, method) {
         result = fixAllTotalFormulas();
         break;
 
-      case 'inspect_ttv':
-        result = handleInspectTtv(params.year || '2026');
+      case 'get_ttv_race':
+        result = handleGetTtvRace(params.year || SHEET_YEAR_DEFAULT);
+        break;
+
+      case 'record_ttv':
+        result = handleRecordTtv(params);
         break;
 
       default:
@@ -1146,4 +1150,144 @@ function handleGetLogs(limit) {
   }
 
   return { success: true, logs: logs };
+}
+
+// ==============================================================================
+// ĐUA TOP TTV (TUYỂN THÀNH VIÊN) - SHEET RIÊNG
+// ==============================================================================
+
+function getTtvSheet(year) {
+  var ss = getSpreadsheet();
+  var sheetName = 'Đua Top TTV ' + year;
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    // Thử các biến thể tên sheet khác
+    sheet = ss.getSheetByName('TTV ' + year) || ss.getSheetByName('TTV_' + year);
+  }
+  return sheet;
+}
+
+function handleGetTtvRace(year) {
+  var sheet = getTtvSheet(year);
+  if (!sheet) {
+    return {
+      success: false,
+      message: 'Không tìm thấy sheet "Đua Top TTV ' + year + '" trong bảng tính!'
+    };
+  }
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 3) {
+    return { success: true, year: year, members: [], monthlyTotals: {} };
+  }
+
+  // Dữ liệu từ dòng 3 đến dòng cuối, từ cột A (1) đến cột P (16)
+  var numRows = lastRow - 2;
+  var values = sheet.getRange(3, 1, numRows, 16).getValues();
+
+  var members = [];
+  var monthlyTotals = {};
+  for (var m = 1; m <= 12; m++) monthlyTotals[m] = 0;
+  var totalYearSum = 0;
+
+  for (var r = 0; r < values.length; r++) {
+    var row = values[r];
+    var rawStt = String(row[0] || '').trim().toUpperCase();
+
+    // Dòng tổng cộng
+    if (rawStt === 'TỔNG CỘNG' || rawStt.indexOf('TỔNG CỘNG') !== -1) {
+      break;
+    }
+
+    var tenIngame = String(row[1] || '').trim();
+    if (!tenIngame) continue;
+
+    var chucVu = String(row[2] || 'Thành viên').trim();
+    var isBQT = ['Leader', 'Co-Leader', 'QTV'].includes(chucVu);
+
+    var months = {};
+    var memberSum = 0;
+    for (var mIdx = 1; mIdx <= 12; mIdx++) {
+      var colVal = row[3 + (mIdx - 1)]; // Col D (index 3) is Month 1
+      var numVal = parseAmount(colVal);
+      months[mIdx] = numVal;
+      memberSum += numVal;
+      monthlyTotals[mIdx] += numVal;
+    }
+
+    var tongNam = parseAmount(row[15]); // Col P (index 15)
+    if (tongNam === 0 && memberSum > 0) tongNam = memberSum;
+    totalYearSum += tongNam;
+
+    members.push({
+      rowIndex: 3 + r,
+      stt: parseInt(row[0], 10) || (r + 1),
+      tenIngame: tenIngame,
+      chucVu: chucVu,
+      isBQT: isBQT,
+      months: months,
+      tongNam: tongNam
+    });
+  }
+
+  return {
+    success: true,
+    year: year,
+    members: members,
+    monthlyTotals: monthlyTotals,
+    totalYearSum: totalYearSum
+  };
+}
+
+function handleRecordTtv(params) {
+  var year = String(params.year || SHEET_YEAR_DEFAULT).trim();
+  var tenIngame = String(params.tenIngame || '').trim();
+  var month = parseInt(params.month, 10);
+  var value = parseInt(params.value, 10);
+  if (isNaN(value) || value < 0) value = 0;
+
+  if (!tenIngame || isNaN(month) || month < 1 || month > 12) {
+    return { success: false, message: 'Dữ liệu không hợp lệ (thiếu Tên Ingame hoặc Tháng)' };
+  }
+
+  var sheet = getTtvSheet(year);
+  if (!sheet) {
+    return { success: false, message: 'Không tìm thấy sheet "Đua Top TTV ' + year + '"' };
+  }
+
+  var lastRow = sheet.getLastRow();
+  var values = sheet.getRange(3, 1, Math.max(1, lastRow - 2), 3).getValues();
+
+  var targetRow = -1;
+  for (var r = 0; r < values.length; r++) {
+    if (String(values[r][1] || '').trim().toLowerCase() === tenIngame.toLowerCase()) {
+      targetRow = 3 + r;
+      break;
+    }
+  }
+
+  if (targetRow === -1) {
+    return { success: false, message: 'Không tìm thấy thành viên "' + tenIngame + '" trên sheet Đua Top TTV ' + year };
+  }
+
+  // Cột cho tháng: Tháng 1 là cột D (4) -> col = 3 + month
+  var col = 3 + month;
+  var oldVal = sheet.getRange(targetRow, col).getValue();
+
+  if (value === 0) {
+    sheet.getRange(targetRow, col).setValue('');
+  } else {
+    sheet.getRange(targetRow, col).setValue(value);
+  }
+
+  // Đảm bảo công thức Tổng Năm ở cột P (16)
+  sheet.getRange(targetRow, 16).setFormula('=SUM(D' + targetRow + ':O' + targetRow + ')');
+
+  var actor = params.actor || 'Ban Quản Trị';
+  appendLog(actor, 'Cập nhật Đua Top TTV', tenIngame + ' (Tháng ' + month + ')', oldVal || 0, value);
+
+  return {
+    success: true,
+    message: 'Đã cập nhật thành công TTV Tháng ' + month + ' cho ' + tenIngame + ': ' + value + ' TV'
+  };
 }

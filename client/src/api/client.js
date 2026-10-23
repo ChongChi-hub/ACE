@@ -144,6 +144,19 @@ const api = {
       };
     }
 
+    // 5. Đua top TTV
+    if (path === '/ttv-race') {
+      const year = params.get('year') || '2026';
+      const res = await callAppsScript('get_ttv_race', { year });
+      return {
+        data: {
+          success: true,
+          data: res,
+          ...res
+        }
+      };
+    }
+
     throw new Error(`Endpoint GET không hỗ trợ: ${path}`);
   },
 
@@ -212,6 +225,18 @@ const api = {
         rowIndex: body.rowIndex,
         field: body.field,
         amount: body.amount
+      });
+      return { data: { success: true, data: res, ...res } };
+    }
+
+    // Ghi nhận TTV
+    if (path === '/ttv-race/record') {
+      const year = params.get('year') || '2026';
+      const res = await callAppsScript('record_ttv', {
+        year,
+        tenIngame: body.tenIngame,
+        month: body.month,
+        value: body.value
       });
       return { data: { success: true, data: res, ...res } };
     }

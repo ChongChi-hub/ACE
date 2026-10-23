@@ -25,7 +25,8 @@ import {
   KeyOutlined,
   SunOutlined,
   MoonOutlined,
-  AppstoreOutlined
+  AppstoreOutlined,
+  TrophyOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -93,6 +94,11 @@ export function MainLayout() {
       icon: <DollarCircleOutlined />,
       label: 'Quỹ Clan',
     },
+    {
+      key: '/ttv-race',
+      icon: <TrophyOutlined className="text-amber-500" />,
+      label: 'Đua Top TTV',
+    },
     ...(user?.role === 'Leader'
       ? [
           {
@@ -128,6 +134,7 @@ export function MainLayout() {
     '/dashboard': 'Tổng quan',
     '/members': 'Danh sách thành viên',
     '/fund': 'Quản lý thu quỹ Clan',
+    '/ttv-race': 'Bảng Đua Top Tuyển Thành Viên (TTV)',
     '/accounts': 'Quản lý tài khoản Ban quản trị',
     '/logs': 'Lịch sử thao tác Google Sheet',
     '/profile': 'Thông tin cá nhân'
@@ -352,7 +359,7 @@ export function MainLayout() {
 
           <button
             onClick={() => navigate('/fund')}
-            className={`flex flex-col items-center justify-center py-1 px-3 border-none bg-transparent cursor-pointer transition ${
+            className={`flex flex-col items-center justify-center py-1 px-2 border-none bg-transparent cursor-pointer transition ${
               currentPath === '/fund' ? 'text-amber-500 font-bold' : 'text-slate-500 dark:text-slate-400'
             }`}
           >
@@ -361,8 +368,18 @@ export function MainLayout() {
           </button>
 
           <button
+            onClick={() => navigate('/ttv-race')}
+            className={`flex flex-col items-center justify-center py-1 px-2 border-none bg-transparent cursor-pointer transition ${
+              currentPath === '/ttv-race' ? 'text-amber-500 font-bold' : 'text-slate-500 dark:text-slate-400'
+            }`}
+          >
+            <TrophyOutlined className="text-lg" />
+            <span className="text-[11px] mt-0.5">Đua Top</span>
+          </button>
+
+          <button
             onClick={() => setMobileDrawerOpen(true)}
-            className="flex flex-col items-center justify-center py-1 px-3 border-none bg-transparent cursor-pointer text-slate-500 dark:text-slate-400 transition"
+            className="flex flex-col items-center justify-center py-1 px-2 border-none bg-transparent cursor-pointer text-slate-500 dark:text-slate-400 transition"
           >
             <AppstoreOutlined className="text-lg" />
             <span className="text-[11px] mt-0.5">Menu</span>
