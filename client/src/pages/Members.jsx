@@ -260,7 +260,7 @@ export function Members() {
     },
     {
       title: (
-        <Tooltip title="TTV: Số lượng thành viên BQT tuyển được">
+        <Tooltip title="TTV: Số lượng thành viên tuyển được (Đua Top TTV)">
           <span className="flex items-center justify-center gap-1">
             <span>TTV</span>
             <InfoCircleOutlined className="text-xs text-purple-400" />
@@ -271,11 +271,7 @@ export function Members() {
       key: 'ttv',
       align: 'center',
       width: 80,
-      render: (val, record) => {
-        const isBQT = ['Leader', 'Co-Leader', 'QTV'].includes(record.chucVu);
-        if (!isBQT) {
-          return <span className="text-slate-600 font-mono">-</span>;
-        }
+      render: (val) => {
         return (
           <Tag color="purple" className="font-bold m-0 font-mono text-xs">
             {val || 0} TV
@@ -599,16 +595,14 @@ export function Members() {
                       </div>
                     </div>
 
-                    {/* Huy hiệu TTV (Tuyển thành viên) - Chỉ cho 7 BQT */}
-                    {['Leader', 'Co-Leader', 'QTV'].includes(record.chucVu) && (
-                      <div
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40"
-                        title="Số lượng thành viên BQT tuyển được"
-                      >
-                        <UsergroupAddOutlined className="text-purple-500 dark:text-purple-400" />
-                        <span>{record.ttv || 0} TV</span>
-                      </div>
-                    )}
+                    {/* Huy hiệu TTV (Tuyển thành viên) - Dành cho toàn thể clan */}
+                    <div
+                      className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40"
+                      title="Số lượng thành viên tuyển được"
+                    >
+                      <UsergroupAddOutlined className="text-purple-500 dark:text-purple-400" />
+                      <span>{record.ttv || 0} TV</span>
+                    </div>
                   </div>
 
                   {/* ID Game & Facebook */}

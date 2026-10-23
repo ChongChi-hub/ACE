@@ -286,7 +286,7 @@ export function Fund() {
     },
     {
       title: (
-        <Tooltip title="TTV: Số lượng thành viên do BQT tuyển (chỉ áp dụng cho 7 BQT)">
+        <Tooltip title="TTV: Số lượng thành viên tuyển được (Áp dụng cho toàn Clan)">
           <span className="flex items-center justify-center gap-1 font-semibold text-purple-600 dark:text-purple-300">
             <span>TTV</span>
             <InfoCircleOutlined className="text-xs" />
@@ -298,10 +298,6 @@ export function Fund() {
       width: 80,
       align: 'center',
       render: (val, record) => {
-        const isBQT = ['Leader', 'Co-Leader', 'QTV'].includes(record.chucVu);
-        if (!isBQT) {
-          return <span className="text-slate-400 dark:text-slate-600 font-mono">-</span>;
-        }
         return (
           <div
             onClick={() => canEditFund && handleOpenEdit(record, 'ttv', 'Số lượng TV tuyển được (TTV)', val)}
@@ -553,20 +549,18 @@ export function Fund() {
                       </div>
                     </div>
 
-                    {/* Tuyển thành viên: CHỈ HIỆN CHO 7 BQT */}
-                    {isBQT && (
-                      <div
-                        onClick={() => canEditFund && handleOpenEdit(m, 'ttv', 'Số lượng TV tuyển được (TTV)', m.ttv)}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold flex-shrink-0 ${
-                          canEditFund ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'
-                        } bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/50 shadow-sm`}
-                        title={canEditFund ? 'Nhấp để cập nhật số TV tuyển được' : 'Số lượng thành viên BQT tuyển được'}
-                      >
-                        <UsergroupAddOutlined className="text-purple-500 dark:text-purple-400 text-xs" />
-                        <span>{m.ttv || 0} TV</span>
-                        {canEditFund && <EditOutlined className="text-[10px] opacity-70 ml-0.5" />}
-                      </div>
-                    )}
+                    {/* Tuyển thành viên: Toàn Clan */}
+                    <div
+                      onClick={() => canEditFund && handleOpenEdit(m, 'ttv', 'Số lượng TV tuyển được (TTV)', m.ttv)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold flex-shrink-0 ${
+                        canEditFund ? 'cursor-pointer hover:scale-105 active:scale-95' : 'cursor-default'
+                      } bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/50 shadow-sm`}
+                      title={canEditFund ? 'Nhấp để cập nhật số TV tuyển được' : 'Số lượng thành viên tuyển được'}
+                    >
+                      <UsergroupAddOutlined className="text-purple-500 dark:text-purple-400 text-xs" />
+                      <span>{m.ttv || 0} TV</span>
+                      {canEditFund && <EditOutlined className="text-[10px] opacity-70 ml-0.5" />}
+                    </div>
                   </div>
 
                   {/* LƯỚI 12 THÁNG TRỰC QUAN (Y hệt hình ảnh yêu cầu) */}
