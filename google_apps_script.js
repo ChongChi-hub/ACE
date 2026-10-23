@@ -270,8 +270,8 @@ function detectColumns(sheet) {
     months: {},       // G -> R (Tháng 1 -> 12)
     ungHo: 19,        // S
     tienPhat: 20,     // T
-    ttv: 21,          // U
-    tongDongGop: 22   // V
+    ttv: -1,          // TTV nằm ở sheet riêng: "Đua Top TTV", không nằm ở sheet Quỹ
+    tongDongGop: 21   // U (Tổng đóng góp)
   };
 
   for (var c = 0; c < headers.length; c++) {
@@ -535,6 +535,32 @@ function handleGetMembers(year) {
   var members = [];
   var idCountMap = {};
 
+  // Đọc dữ liệu TTV từ sheet "Đua Top TTV " + year (và Đua Top TTV 2027)
+  var ttvMap = {};
+  try {
+    var ttvSheet = getTtvSheet(year);
+    if (ttvSheet && ttvSheet.getLastRow() >= 3) {
+      var ttvLastRow = ttvSheet.getLastRow();
+      var ttvValues = ttvSheet.getRange(3, 1, ttvLastRow - 2, 16).getValues();
+      for (var tr = 0; tr < ttvValues.length; tr++) {
+        var tRow = ttvValues[tr];
+        var tStt = String(tRow[0] || '').trim().toUpperCase();
+        if (tStt === 'TỔNG CỘNG' || tStt.indexOf('TỔNG CỘNG') !== -1) break;
+
+        var tName = String(tRow[1] || '').trim().toLowerCase();
+        if (!tName) continue;
+
+        var tSum = parseAmount(tRow[15]); // Cột P: Tổng Năm
+        if (tSum === 0) {
+          for (var tm = 3; tm <= 14; tm++) {
+            tSum += parseAmount(tRow[tm]);
+          }
+        }
+        ttvMap[tName] = tSum;
+      }
+    }
+  } catch (ttvErr) {}
+
   for (var r2 = 7; r2 < summaryRowIdx; r2++) {
     var vRow = values[r2];
     var fRow = formulas[r2];
@@ -569,7 +595,9 @@ function handleGetMembers(year) {
 
     var ungHo = parseAmount(vRow[cols.ungHo - 1]);
     var tienPhat = parseAmount(vRow[cols.tienPhat - 1]);
-    var ttv = parseAmount(vRow[cols.ttv - 1]);
+
+    // TTV đọc từ sheet "Đua Top TTV " + year! TUYỆT ĐỐI KHÔNG đọc nhầm cột Tổng Đóng Góp
+    var ttv = ttvMap[ingame.toLowerCase()] || 0;
 
     // Tổng đóng góp = SUM(1..12 + Ủng hộ + Phạt), TUYỆT ĐỐI KHÔNG tính TTV
     var calcTotal = 0;
@@ -675,6 +703,26 @@ function handleRecordFund(params) {
   }
 
   var cols = detectColumns(sheet);
+
+  if (field === 'ttv') {
+    // TTV thuộc về sheet "Đua Top TTV " + year! TUYỆT ĐỐI KHÔNG ghi vào sheet Quỹ
+    var memberName = String(sheet.getRange(rowIndex, cols.tenIngame).getValue() || '').trim();
+    if (!memberName) {
+      return { success: false, message: 'Không tìm thấy tên thành viên ở dòng ' + rowIndex };
+    }
+    var mNum = parseInt(params.month, 10);
+    if (isNaN(mNum) || mNum < 1 || mNum > 12) {
+      mNum = new Date().getMonth() + 1; // Mặc định tháng hiện tại
+    }
+    return handleRecordTtv({
+      year: year,
+      tenIngame: memberName,
+      month: mNum,
+      value: amount,
+      actor: actor
+    });
+  }
+
   var targetCol = -1;
 
   if (field.indexOf('month_') === 0) {
@@ -684,8 +732,6 @@ function handleRecordFund(params) {
     targetCol = cols.ungHo;
   } else if (field === 'tienPhat') {
     targetCol = cols.tienPhat;
-  } else if (field === 'ttv') {
-    targetCol = cols.ttv;
   }
 
   if (!targetCol || targetCol === -1) {
@@ -765,15 +811,22 @@ function handleAddMember(params) {
 
   sheet.getRange(newRow, cols.chucVu).setValue(chucVu);
 
-  // ĐỂ TRỐNG TOÀN BỘ CÁC Ô TỪ THÁNG 1 ĐẾN TTV (KHÔNG GHI GIÁ TRỊ MẶC ĐỊNH 0)
+  // ĐỂ TRỐNG TOÀN BỘ CÁC Ô TỪ THÁNG 1 ĐẾN TIỀN PHẠT (KHÔNG GHI GIÁ TRỊ MẶC ĐỊNH 0)
   var startFundCol = cols.months[1];
-  var totalFundCols = (cols.ttv - startFundCol + 1);
+  var totalFundCols = (cols.tienPhat - startFundCol + 1);
   sheet.getRange(newRow, startFundCol, 1, totalFundCols).clearContent();
 
-  if (params.ttv !== undefined && params.ttv !== null && cols.ttv) {
+  if (params.ttv !== undefined && params.ttv !== null) {
     var initTtv = parseInt(params.ttv, 10);
     if (!isNaN(initTtv) && initTtv > 0) {
-      sheet.getRange(newRow, cols.ttv).setValue(initTtv);
+      handleRecordTtv({
+        year: year,
+        tenIngame: ingame,
+        chucVu: chucVu,
+        month: new Date().getMonth() + 1,
+        value: initTtv,
+        actor: actor
+      });
     }
   }
 
@@ -834,9 +887,35 @@ function handleEditMember(params) {
 
   sheet.getRange(rowIndex, cols.chucVu).setValue(chucVu);
 
-  if (params.ttv !== undefined && params.ttv !== null && cols.ttv) {
+  if (oldIngame && oldIngame.toLowerCase() !== ingame.toLowerCase()) {
+    try {
+      var ttvSheet = getTtvSheet(year);
+      if (ttvSheet) {
+        var ttvLast = ttvSheet.getLastRow();
+        var ttvNames = ttvSheet.getRange(3, 2, Math.max(1, ttvLast - 2), 2).getValues();
+        for (var tIdx = 0; tIdx < ttvNames.length; tIdx++) {
+          if (String(ttvNames[tIdx][0] || '').trim().toLowerCase() === oldIngame.toLowerCase()) {
+            ttvSheet.getRange(3 + tIdx, 2).setValue(ingame);
+            ttvSheet.getRange(3 + tIdx, 3).setValue(chucVu);
+            break;
+          }
+        }
+      }
+    } catch (renameErr) {}
+  }
+
+  if (params.ttv !== undefined && params.ttv !== null) {
     var editTtv = parseInt(params.ttv, 10);
-    sheet.getRange(rowIndex, cols.ttv).setValue(!isNaN(editTtv) && editTtv > 0 ? editTtv : '');
+    if (!isNaN(editTtv)) {
+      handleRecordTtv({
+        year: year,
+        tenIngame: ingame,
+        chucVu: chucVu,
+        month: new Date().getMonth() + 1,
+        value: editTtv,
+        actor: actor
+      });
+    }
   }
 
   var actor = params.actor || 'Ban Quản Trị';
@@ -1279,7 +1358,26 @@ function handleRecordTtv(params) {
   }
 
   if (targetRow === -1) {
-    return { success: false, message: 'Không tìm thấy thành viên "' + tenIngame + '" trên sheet Đua Top TTV ' + year };
+    // Tự động thêm thành viên vào sheet Đua Top TTV trước dòng TỔNG CỘNG
+    var summaryTtvRow = -1;
+    for (var sr = 0; sr < values.length; sr++) {
+      var sVal = String(values[sr][0] || '').trim().toUpperCase();
+      if (sVal === 'TỔNG CỘNG' || sVal.indexOf('TỔNG CỘNG') !== -1) {
+        summaryTtvRow = 3 + sr;
+        break;
+      }
+    }
+    if (summaryTtvRow !== -1) {
+      sheet.insertRowBefore(summaryTtvRow);
+      targetRow = summaryTtvRow;
+    } else {
+      targetRow = lastRow + 1;
+    }
+    var newStt = targetRow - 2;
+    sheet.getRange(targetRow, 1).setValue(newStt);
+    sheet.getRange(targetRow, 2).setValue(tenIngame);
+    sheet.getRange(targetRow, 3).setValue(params.chucVu || 'Thành viên');
+    sheet.getRange(targetRow, 16).setFormula('=SUM(D' + targetRow + ':O' + targetRow + ')');
   }
 
   // Cột cho tháng: Tháng 1 là cột D (4) -> col = 3 + month

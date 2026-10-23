@@ -62,9 +62,11 @@ export function Members() {
   const [form] = Form.useForm();
 
   // Quick TTV Edit state
+  const currentMonthNum = new Date().getMonth() + 1;
   const [ttvDrawerOpen, setTtvDrawerOpen] = useState(false);
   const [ttvTargetMember, setTtvTargetMember] = useState(null);
   const [ttvInputVal, setTtvInputVal] = useState(0);
+  const [ttvMonth, setTtvMonth] = useState(currentMonthNum);
 
   const queryClient = useQueryClient();
 
@@ -120,16 +122,18 @@ export function Members() {
   });
 
   const recordTtvMutation = useMutation({
-    mutationFn: ({ rowIndex, amount }) =>
+    mutationFn: ({ rowIndex, month, amount }) =>
       api.post(`/fund/record?year=${activeYear}`, {
         rowIndex,
         field: 'ttv',
+        month: month || ttvMonth,
         amount
       }),
     onSuccess: (res) => {
       message.success(res.data.message || 'Cập nhật số TV tuyển thành công!');
       queryClient.invalidateQueries({ queryKey: ['members', activeYear] });
       queryClient.invalidateQueries({ queryKey: ['fund', activeYear] });
+      queryClient.invalidateQueries({ queryKey: ['ttv-race', activeYear] });
       setTtvDrawerOpen(false);
       setTtvTargetMember(null);
     },
@@ -141,6 +145,7 @@ export function Members() {
   const handleOpenTtvQuick = (record) => {
     setTtvTargetMember(record);
     setTtvInputVal(record.ttv || 0);
+    setTtvMonth(currentMonthNum);
     setTtvDrawerOpen(true);
   };
 
@@ -149,6 +154,7 @@ export function Members() {
     const newVal = Math.max(0, (ttvTargetMember.ttv || 0) + delta);
     recordTtvMutation.mutate({
       rowIndex: ttvTargetMember.rowIndex,
+      month: ttvMonth,
       amount: newVal
     });
   };
@@ -157,6 +163,7 @@ export function Members() {
     if (!ttvTargetMember) return;
     recordTtvMutation.mutate({
       rowIndex: ttvTargetMember.rowIndex,
+      month: ttvMonth,
       amount: ttvInputVal
     });
   };
@@ -858,6 +865,25 @@ export function Members() {
                   Hiện tại: {ttvTargetMember.ttv || 0} TV
                 </span>
               </div>
+            </div>
+
+            <div className="text-xs text-purple-600 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 p-2.5 rounded-lg border border-purple-200 dark:border-purple-800">
+              ✨ Số lượng TTV sẽ được ghi trực tiếp vào sheet <strong>Đua Top TTV {activeYear}</strong> và cập nhật ngay vào bảng xếp hạng!
+            </div>
+
+            <div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+                Ghi nhận cho Tháng (Đua Top TTV):
+              </div>
+              <Select
+                value={ttvMonth}
+                onChange={setTtvMonth}
+                className="w-full"
+                options={Array.from({ length: 12 }, (_, i) => ({
+                  label: `Tháng ${i + 1}`,
+                  value: i + 1
+                }))}
+              />
             </div>
 
             <div>

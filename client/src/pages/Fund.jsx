@@ -75,18 +75,20 @@ export function Fund() {
   const members = data?.members || [];
   const totalRow = data?.totalRow || {};
 
-  // Mutation cập nhật quỹ
+  // Mutation cập nhật quỹ hoặc TTV
   const recordFundMutation = useMutation({
-    mutationFn: ({ rowIndex, field, amount }) =>
-      api.post(`/fund/record?year=${activeYear}`, { rowIndex, field, amount }),
+    mutationFn: (payload) =>
+      api.post(`/fund/record?year=${activeYear}`, payload),
     onSuccess: (res) => {
-      message.success(res.data.message || 'Ghi nhận quỹ thành công!');
+      message.success(res.data.message || 'Ghi nhận thành công!');
       queryClient.invalidateQueries({ queryKey: ['members', activeYear] });
+      queryClient.invalidateQueries({ queryKey: ['fund', activeYear] });
+      queryClient.invalidateQueries({ queryKey: ['ttv-race', activeYear] });
       setEditingCell(null);
       form.resetFields();
     },
     onError: (err) => {
-      message.error(err.response?.data?.message || 'Không thể ghi nhận quỹ!');
+      message.error(err.response?.data?.message || 'Không thể ghi nhận!');
     }
   });
 
@@ -164,7 +166,10 @@ export function Fund() {
       fieldLabel,
       currentAmount: currentAmount || 0
     });
-    form.setFieldsValue({ amount: currentAmount || 0 });
+    form.setFieldsValue({
+      amount: currentAmount || 0,
+      month: currentRealMonth
+    });
   };
 
   const handleSaveFund = (values) => {
@@ -172,6 +177,7 @@ export function Fund() {
     recordFundMutation.mutate({
       rowIndex: editingCell.rowIndex,
       field: editingCell.field,
+      month: values.month || currentRealMonth,
       amount: values.amount ?? 0
     });
   };
@@ -787,6 +793,23 @@ export function Fund() {
           {editingCell?.field === 'ttv' ? (
             /* Form nhập số lượng TV tuyển được (TTV) */
             <>
+              <div className="text-xs text-purple-600 dark:text-purple-300 mb-3 bg-purple-50 dark:bg-purple-950/60 p-2.5 rounded-lg border border-purple-200 dark:border-purple-800">
+                ✨ Số lượng TTV sẽ được đồng bộ trực tiếp lên sheet <strong>Đua Top TTV {activeYear}</strong> và bảng xếp hạng thi đua của Clan!
+              </div>
+
+              <Form.Item
+                name="month"
+                label="Ghi nhận cho Tháng (Đua Top TTV)"
+                rules={[{ required: true, message: 'Vui lòng chọn tháng' }]}
+              >
+                <Select
+                  options={Array.from({ length: 12 }, (_, i) => ({
+                    label: `Tháng ${i + 1}`,
+                    value: i + 1
+                  }))}
+                />
+              </Form.Item>
+
               <Form.Item
                 name="amount"
                 label="Số lượng thành viên tuyển được (người)"
