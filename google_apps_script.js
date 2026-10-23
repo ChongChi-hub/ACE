@@ -770,6 +770,13 @@ function handleAddMember(params) {
   var totalFundCols = (cols.ttv - startFundCol + 1);
   sheet.getRange(newRow, startFundCol, 1, totalFundCols).clearContent();
 
+  if (params.ttv !== undefined && params.ttv !== null && cols.ttv) {
+    var initTtv = parseInt(params.ttv, 10);
+    if (!isNaN(initTtv) && initTtv > 0) {
+      sheet.getRange(newRow, cols.ttv).setValue(initTtv);
+    }
+  }
+
   // Thiết lập công thức TỔNG ĐÓNG GÓP: Tính từ Tháng 1 ($G) đến Tiền phạt ($T), KHOÁ CỨNG $ để Google Sheets không tự động mở rộng sang cột U (TTV)
   var mStartColLetter = colToLetter(cols.months[1]);
   var tienPhatLetter = colToLetter(cols.tienPhat);
@@ -826,6 +833,11 @@ function handleEditMember(params) {
   }
 
   sheet.getRange(rowIndex, cols.chucVu).setValue(chucVu);
+
+  if (params.ttv !== undefined && params.ttv !== null && cols.ttv) {
+    var editTtv = parseInt(params.ttv, 10);
+    sheet.getRange(rowIndex, cols.ttv).setValue(!isNaN(editTtv) && editTtv > 0 ? editTtv : '');
+  }
 
   var actor = params.actor || 'Ban Quản Trị';
   appendLog(actor, 'Chỉnh sửa thành viên', oldIngame, oldIngame, ingame + ' (' + chucVu + ')');

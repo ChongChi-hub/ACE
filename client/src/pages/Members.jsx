@@ -4,6 +4,7 @@ import {
   Table,
   Card,
   Input,
+  InputNumber,
   Select,
   Button,
   Modal,
@@ -60,6 +61,11 @@ export function Members() {
   const [editingMember, setEditingMember] = useState(null);
   const [form] = Form.useForm();
 
+  // Quick TTV Edit state
+  const [ttvDrawerOpen, setTtvDrawerOpen] = useState(false);
+  const [ttvTargetMember, setTtvTargetMember] = useState(null);
+  const [ttvInputVal, setTtvInputVal] = useState(0);
+
   const queryClient = useQueryClient();
 
   // Đọc danh sách thành viên
@@ -113,6 +119,48 @@ export function Members() {
     }
   });
 
+  const recordTtvMutation = useMutation({
+    mutationFn: ({ rowIndex, amount }) =>
+      api.post(`/fund/record?year=${activeYear}`, {
+        rowIndex,
+        field: 'ttv',
+        amount
+      }),
+    onSuccess: (res) => {
+      message.success(res.data.message || 'Cập nhật số TV tuyển thành công!');
+      queryClient.invalidateQueries({ queryKey: ['members', activeYear] });
+      queryClient.invalidateQueries({ queryKey: ['fund', activeYear] });
+      setTtvDrawerOpen(false);
+      setTtvTargetMember(null);
+    },
+    onError: (err) => {
+      message.error(err.response?.data?.message || 'Không thể cập nhật TTV!');
+    }
+  });
+
+  const handleOpenTtvQuick = (record) => {
+    setTtvTargetMember(record);
+    setTtvInputVal(record.ttv || 0);
+    setTtvDrawerOpen(true);
+  };
+
+  const handleQuickAddTtv = (delta) => {
+    if (!ttvTargetMember) return;
+    const newVal = Math.max(0, (ttvTargetMember.ttv || 0) + delta);
+    recordTtvMutation.mutate({
+      rowIndex: ttvTargetMember.rowIndex,
+      amount: newVal
+    });
+  };
+
+  const handleSaveTtvCustom = () => {
+    if (!ttvTargetMember) return;
+    recordTtvMutation.mutate({
+      rowIndex: ttvTargetMember.rowIndex,
+      amount: ttvInputVal
+    });
+  };
+
   // Filter & Search logic
   const filteredMembers = useMemo(() => {
     return members.filter(m => {
@@ -150,7 +198,7 @@ export function Members() {
   const handleOpenAdd = () => {
     setEditingMember(null);
     form.resetFields();
-    form.setFieldsValue({ chucVu: 'Thành viên' });
+    form.setFieldsValue({ chucVu: 'Thành viên', ttv: 0 });
     setIsModalOpen(true);
   };
 
@@ -161,7 +209,8 @@ export function Members() {
       gameId: record.gameId,
       facebookName: record.facebookName,
       facebookUrl: record.facebookUrl,
-      chucVu: record.chucVu
+      chucVu: record.chucVu,
+      ttv: record.ttv || 0
     });
     setIsModalOpen(true);
   };
@@ -260,22 +309,33 @@ export function Members() {
     },
     {
       title: (
-        <Tooltip title="TTV: Số lượng thành viên tuyển được (Đua Top TTV)">
-          <span className="flex items-center justify-center gap-1">
+        <Tooltip title="TTV: Số lượng thành viên tuyển được (Đua Top TTV toàn Clan)">
+          <span className="flex items-center justify-center gap-1 font-semibold text-purple-600 dark:text-purple-300">
             <span>TTV</span>
-            <InfoCircleOutlined className="text-xs text-purple-400" />
+            <InfoCircleOutlined className="text-xs" />
           </span>
         </Tooltip>
       ),
       dataIndex: 'ttv',
       key: 'ttv',
       align: 'center',
-      width: 80,
-      render: (val) => {
+      width: 90,
+      render: (val, record) => {
+        const canEditThis = canManageMembers || user?.canEditFund;
         return (
-          <Tag color="purple" className="font-bold m-0 font-mono text-xs">
-            {val || 0} TV
-          </Tag>
+          <div
+            onClick={() => canEditThis && handleOpenTtvQuick(record)}
+            className={`inline-flex items-center justify-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold transition ${
+              canEditThis
+                ? 'cursor-pointer hover:ring-2 hover:ring-purple-500 hover:scale-105 active:scale-95'
+                : 'cursor-default'
+            } bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-600/50 shadow-xs`}
+            title={canEditThis ? 'Nhấp để ghi nhận số TV tuyển được' : 'Số lượng thành viên tuyển được'}
+          >
+            <UsergroupAddOutlined className="text-purple-500 dark:text-purple-400 text-xs" />
+            <span>{val || 0} TV</span>
+            {canEditThis && <EditOutlined className="text-[10px] opacity-70 ml-0.5" />}
+          </div>
         );
       }
     },
@@ -384,6 +444,14 @@ export function Members() {
             ...(isLeader ? [{ label: 'Leader', value: 'Leader' }] : []),
           ]}
         />
+      </Form.Item>
+
+      <Form.Item
+        name="ttv"
+        label="Số lượng thành viên tuyển được (TTV)"
+        tooltip="Số thành viên cá nhân này đã tuyển cho Clan"
+      >
+        <InputNumber min={0} className="w-full" placeholder="0" />
       </Form.Item>
 
       <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -597,11 +665,17 @@ export function Members() {
 
                     {/* Huy hiệu TTV (Tuyển thành viên) - Dành cho toàn thể clan */}
                     <div
-                      className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40"
-                      title="Số lượng thành viên tuyển được"
+                      onClick={() => (canManageMembers || user?.canEditFund) && handleOpenTtvQuick(record)}
+                      className={`flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-semibold ${
+                        (canManageMembers || user?.canEditFund)
+                          ? 'cursor-pointer hover:scale-105 active:scale-95'
+                          : ''
+                      } bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-600/50 shadow-xs`}
+                      title={(canManageMembers || user?.canEditFund) ? 'Nhấp để ghi nhận số TV tuyển được' : 'Số lượng thành viên tuyển được'}
                     >
-                      <UsergroupAddOutlined className="text-purple-500 dark:text-purple-400" />
+                      <UsergroupAddOutlined className="text-purple-500 dark:text-purple-400 text-xs" />
                       <span>{record.ttv || 0} TV</span>
+                      {(canManageMembers || user?.canEditFund) && <EditOutlined className="text-[10px] opacity-70 ml-0.5" />}
                     </div>
                   </div>
 
@@ -756,6 +830,97 @@ export function Members() {
           {formContent}
         </Modal>
       )}
+
+      {/* Drawer cập nhật nhanh TTV cho bất kỳ thành viên nào */}
+      <Drawer
+        title={
+          <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 font-bold">
+            <UsergroupAddOutlined />
+            <span>Ghi Nhận Số TV Tuyển Được (TTV)</span>
+          </div>
+        }
+        placement={isMobile ? 'bottom' : 'right'}
+        height={isMobile ? 380 : undefined}
+        width={380}
+        open={ttvDrawerOpen}
+        onClose={() => setTtvDrawerOpen(false)}
+      >
+        {ttvTargetMember && (
+          <div className="space-y-5">
+            <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800">
+              <div className="text-xs text-slate-400">Thành viên Clan:</div>
+              <div className="font-bold text-base text-slate-800 dark:text-slate-100 mt-0.5">
+                {ttvTargetMember.tenIngame}
+              </div>
+              <div className="mt-1 flex items-center gap-2">
+                <RoleTag role={ttvTargetMember.chucVu} />
+                <span className="text-xs font-mono font-bold text-purple-600 dark:text-purple-400">
+                  Hiện tại: {ttvTargetMember.ttv || 0} TV
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                Cộng nhanh số TV tuyển được:
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                <Button
+                  onClick={() => handleQuickAddTtv(1)}
+                  loading={recordTtvMutation.isPending}
+                  className="font-bold text-emerald-600"
+                >
+                  +1
+                </Button>
+                <Button
+                  onClick={() => handleQuickAddTtv(2)}
+                  loading={recordTtvMutation.isPending}
+                  className="font-bold text-emerald-600"
+                >
+                  +2
+                </Button>
+                <Button
+                  onClick={() => handleQuickAddTtv(5)}
+                  loading={recordTtvMutation.isPending}
+                  className="font-bold text-emerald-600"
+                >
+                  +5
+                </Button>
+                <Button
+                  onClick={() => handleQuickAddTtv(-(ttvTargetMember.ttv || 0))}
+                  loading={recordTtvMutation.isPending}
+                  danger
+                  className="font-semibold text-xs"
+                >
+                  Đặt về 0
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                Hoặc nhập trực tiếp số lượng:
+              </div>
+              <div className="flex gap-2">
+                <InputNumber
+                  min={0}
+                  className="flex-1"
+                  value={ttvInputVal}
+                  onChange={(v) => setTtvInputVal(v ?? 0)}
+                />
+                <Button
+                  type="primary"
+                  loading={recordTtvMutation.isPending}
+                  onClick={handleSaveTtvCustom}
+                  className="bg-purple-600 hover:bg-purple-500"
+                >
+                  Lưu
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }

@@ -300,12 +300,13 @@ export function Fund() {
       render: (val, record) => {
         return (
           <div
-            onClick={() => canEditFund && handleOpenEdit(record, 'ttv', 'Số lượng TV tuyển được (TTV)', val)}
-            className={`p-1.5 rounded text-xs font-mono font-bold text-center transition ${
-              canEditFund ? 'cursor-pointer hover:ring-2 hover:ring-purple-500 hover:scale-105' : ''
-            } ${val > 0 ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800' : 'text-slate-400'}`}
+            onClick={() => canEditFund && handleOpenEdit(record, 'ttv', 'Số lượng TV tuyển được (TTV)', val || 0)}
+            className={`inline-flex items-center justify-center px-2 py-0.5 rounded text-xs font-mono font-bold transition ${
+              canEditFund ? 'cursor-pointer hover:ring-2 hover:ring-purple-500 hover:scale-105 active:scale-95' : 'cursor-default'
+            } bg-purple-50 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-600/50 shadow-xs`}
+            title={canEditFund ? 'Nhấp để ghi nhận số TV tuyển được' : 'Số lượng thành viên tuyển được'}
           >
-            {val > 0 ? `${val} TV` : '0 TV'}
+            {val || 0} TV
           </div>
         );
       },
