@@ -40,10 +40,10 @@ export function TtvRace() {
   const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
-  // Mặc định chọn tháng hiện tại (ví dụ tháng 10)
+  // Mặc định hiển thị TẤT CẢ thành viên (toàn Clan đua top)
   const currentMonthNum = new Date().getMonth() + 1;
   const [selectedPeriod, setSelectedPeriod] = useState(String(currentMonthNum)); // '1'..'12' hoặc 'YEAR'
-  const [onlyBqt, setOnlyBqt] = useState(true);
+  const [onlyBqt, setOnlyBqt] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -176,8 +176,8 @@ export function TtvRace() {
 
     text += `\n--------------------------------------------\n`;
     text += `📊 Tổng số thành viên mới tuyển được: ${totalNewInPeriod} TV\n`;
-    text += `👏 Xin chúc mừng các admin xuất sắc nhận thưởng thi đua!\n`;
-    text += `🔥 Clan ACE SUN chân thành cảm ơn sự cống hiến của Ban Quản Trị!`;
+    text += `👏 Xin chúc mừng các cá nhân xuất sắc nhận thưởng thi đua!\n`;
+    text += `🔥 Clan ACE SUN chân thành cảm ơn sự đóng góp nhiệt huyết của toàn thể anh em!`;
 
     return text;
   }, [selectedPeriod, activeYear, top1, top2, top3, monthlyTotals, totalYearSum]);
@@ -309,13 +309,13 @@ export function TtvRace() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/30 backdrop-blur-md text-amber-300 text-xs font-bold uppercase tracking-wider mb-2">
               <TrophyOutlined className="text-amber-400" />
-              Thi Đua Ban Quản Trị
+              Thi Đua Tuyển Quân Toàn Clan
             </div>
             <h1 className="text-2xl sm:text-3xl font-black font-heading tracking-wide text-white m-0 flex items-center gap-2">
               Bảng Đua Top TTV {activeYear}
             </h1>
             <p className="text-amber-100/90 text-xs sm:text-sm mt-1 max-w-xl m-0">
-              Vinh danh những admin tích cực tuyển thành viên phát triển Clan 『ACE SUN』. Ai dẫn đầu mỗi tháng sẽ được trao thưởng!
+              Vinh danh những thành viên tích cực tuyển quân phát triển Clan 『ACE SUN』. Ai dẫn đầu mỗi tháng đều có phần thưởng nóng!
             </p>
           </div>
 
@@ -376,8 +376,8 @@ export function TtvRace() {
               value={onlyBqt ? 'bqt' : 'all'}
               onChange={(val) => setOnlyBqt(val === 'bqt')}
               options={[
-                { label: 'Chỉ BQT (7 người)', value: 'bqt' },
-                { label: 'Tất cả thành viên', value: 'all' }
+                { label: 'Tất cả thành viên (Toàn Clan)', value: 'all' },
+                { label: 'Chỉ Ban Quản Trị (7 người)', value: 'bqt' }
               ]}
               className="bg-slate-100 dark:bg-slate-800 p-0.5"
             />
@@ -570,7 +570,7 @@ export function TtvRace() {
         {editingTarget && (
           <div className="space-y-5">
             <div className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800">
-              <div className="text-xs text-slate-400">Thành viên Ban Quản Trị:</div>
+              <div className="text-xs text-slate-400">Thành viên Clan:</div>
               <div className="font-bold text-base text-slate-800 dark:text-slate-100 mt-0.5">
                 {editingTarget.tenIngame}
               </div>
