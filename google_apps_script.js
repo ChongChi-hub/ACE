@@ -739,10 +739,10 @@ function handleAddMember(params) {
   var totalFundCols = (cols.ttv - startFundCol + 1);
   sheet.getRange(newRow, startFundCol, 1, totalFundCols).clearContent();
 
-  // Thiết lập công thức TỔNG ĐÓNG GÓP: Tính từ Tháng 1 (cột G) đến Tiền phạt (cột T), KHÔNG tính cột TTV (cột U)
+  // Thiết lập công thức TỔNG ĐÓNG GÓP: Tính từ Tháng 1 ($G) đến Tiền phạt ($T), KHOÁ CỨNG $ để Google Sheets không tự động mở rộng sang cột U (TTV)
   var mStartColLetter = colToLetter(cols.months[1]);
   var tienPhatLetter = colToLetter(cols.tienPhat);
-  var totalFormula = '=SUM(' + mStartColLetter + newRow + ':' + tienPhatLetter + newRow + ')';
+  var totalFormula = '=SUM($' + mStartColLetter + newRow + ':$' + tienPhatLetter + newRow + ')';
   sheet.getRange(newRow, cols.tongDongGop).setFormula(totalFormula);
 
   // Đánh lại số thứ tự STT từ dòng 8 đến dòng newRow
@@ -870,8 +870,8 @@ function fixAllTotalFormulas() {
       var ingame = String(values[r][cols.tenIngame - 1] || '').trim();
       if (!ingame) continue;
 
-      // Đặt lại công thức chuẩn: =SUM(G...:T...)
-      var formula = '=SUM(' + mStartColLetter + rowNum + ':' + tienPhatLetter + rowNum + ')';
+      // Đặt lại công thức chuẩn: =SUM($G...:$T...) với dấu $ khoá cứng cột để Google Sheets không tự động mở rộng sang cột U (TTV)
+      var formula = '=SUM($' + mStartColLetter + rowNum + ':$' + tienPhatLetter + rowNum + ')';
       sheet.getRange(rowNum, cols.tongDongGop).setFormula(formula);
       totalFixed++;
     }
