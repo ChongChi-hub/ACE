@@ -18,9 +18,10 @@ import { Forbidden, NotFound } from './pages/ErrorPages';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
+      refetchInterval: 60000, // Tự động đồng bộ ngầm mỗi 1 phút (60 giây)
       retry: 1,
-      staleTime: 30000,
+      staleTime: 10000,
     },
   },
 });

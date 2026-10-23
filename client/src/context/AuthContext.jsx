@@ -12,7 +12,7 @@ export function AuthProvider({ children }) {
   const [activeYear, setActiveYear] = useState(() => {
     return localStorage.getItem('ace_sun_year') || '2026';
   });
-  const [availableYears, setAvailableYears] = useState(['2026']);
+  const [availableYears, setAvailableYears] = useState(['2026', '2027']);
   const [lastSyncTime, setLastSyncTime] = useState(dayjs().format('HH:mm:ss'));
   const [loading, setLoading] = useState(true);
 
@@ -33,13 +33,12 @@ export function AuthProvider({ children }) {
 
     try {
       const res = await api.get('/auth/me');
-      if (res.data.success) {
+      if (res.data.user) {
         setUser(res.data.user);
         localStorage.setItem('ace_sun_user', JSON.stringify(res.data.user));
       }
     } catch (err) {
       console.warn('Lỗi kiểm tra phiên:', err.message);
-      // Nếu 401 thì interceptor đã điều hướng hoặc xoá token
     } finally {
       setLoading(false);
     }
@@ -51,7 +50,7 @@ export function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     const res = await api.post('/auth/login', { username, password });
-    if (res.data.success) {
+    if (res.data.user) {
       localStorage.setItem('ace_sun_token', res.data.accessToken);
       localStorage.setItem('ace_sun_user', JSON.stringify(res.data.user));
       setUser(res.data.user);
@@ -69,7 +68,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('ace_sun_token');
       localStorage.removeItem('ace_sun_user');
       setUser(null);
-      window.location.href = '/login';
+      window.location.hash = '#/login';
     }
   };
 

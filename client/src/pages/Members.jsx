@@ -14,9 +14,9 @@ import {
   Dropdown,
   Popconfirm,
   message,
-  Grid,
   Empty,
-  Skeleton
+  Skeleton,
+  Segmented
 } from 'antd';
 import {
   SearchOutlined,
@@ -26,9 +26,15 @@ import {
   MoreOutlined,
   WarningFilled,
   FacebookOutlined,
-  IdcardOutlined,
   FilterOutlined,
-  ReloadOutlined
+  ReloadOutlined,
+  AppstoreOutlined,
+  TableOutlined,
+  CopyOutlined,
+  CheckOutlined,
+  CrownOutlined,
+  UsergroupAddOutlined,
+  InfoCircleOutlined
 } from '@ant-design/icons';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
@@ -39,9 +45,15 @@ export function Members() {
   const { user, activeYear } = useAuth();
   const isMobile = useIsMobile();
 
+  // Chế độ xem: 'cards' (Thẻ) hoặc 'table' (Bảng)
+  const [viewMode, setViewMode] = useState(() => {
+    return localStorage.getItem('ace_sun_members_view_mode') || 'table';
+  });
+
   const [searchText, setSearchText] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState(null);
 
   // Modal / Drawer state for Add/Edit
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -116,6 +128,21 @@ export function Members() {
     });
   }, [members, searchText, roleFilter]);
 
+  // Copy ID Game
+  const handleCopyId = (gameId, e) => {
+    if (e) e.stopPropagation();
+    if (!gameId) return;
+    navigator.clipboard.writeText(String(gameId));
+    setCopiedId(gameId);
+    message.success(`Đã sao chép ID: ${gameId}`);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleChangeViewMode = (val) => {
+    setViewMode(val);
+    localStorage.setItem('ace_sun_members_view_mode', val);
+  };
+
   // Quyền thêm/sửa/xoá
   const canManageMembers = ['Leader', 'Co-Leader'].includes(user?.role);
   const isLeader = user?.role === 'Leader';
@@ -184,16 +211,26 @@ export function Members() {
       dataIndex: 'gameId',
       key: 'gameId',
       render: (id, record) => (
-        <div className="flex items-center gap-1.5 font-mono">
+        <button
+          type="button"
+          onClick={(e) => handleCopyId(id, e)}
+          className="flex items-center gap-1.5 font-mono text-xs hover:text-amber-500 transition cursor-pointer"
+          title="Nhấp để sao chép ID"
+        >
           <span>{id || '---'}</span>
+          {copiedId === id ? (
+            <CheckOutlined className="text-emerald-500" />
+          ) : (
+            <CopyOutlined className="text-slate-400 opacity-60 hover:opacity-100" />
+          )}
           {record.isDuplicateId && (
             <Tooltip title="Cảnh báo: ID game này bị trùng với thành viên khác!">
-              <Tag color="warning" icon={<WarningFilled />} className="mr-0 font-sans text-xs">
+              <Tag color="warning" icon={<WarningFilled />} className="mr-0 font-sans text-[10px]">
                 Trùng ID
               </Tag>
             </Tooltip>
           )}
-        </div>
+        </button>
       ),
     },
     {
@@ -206,7 +243,7 @@ export function Members() {
             href={record.facebookUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium hover:underline text-xs"
+            className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-400 font-medium hover:underline text-xs"
           >
             <FacebookOutlined />
             <span>{name}</span>
@@ -220,6 +257,31 @@ export function Members() {
       dataIndex: 'chucVu',
       key: 'chucVu',
       render: (role) => <RoleTag role={role} />,
+    },
+    {
+      title: (
+        <Tooltip title="TTV: Số lượng thành viên BQT tuyển được">
+          <span className="flex items-center justify-center gap-1">
+            <span>TTV</span>
+            <InfoCircleOutlined className="text-xs text-purple-400" />
+          </span>
+        </Tooltip>
+      ),
+      dataIndex: 'ttv',
+      key: 'ttv',
+      align: 'center',
+      width: 80,
+      render: (val, record) => {
+        const isBQT = ['Leader', 'Co-Leader', 'QTV'].includes(record.chucVu);
+        if (!isBQT) {
+          return <span className="text-slate-600 font-mono">-</span>;
+        }
+        return (
+          <Tag color="purple" className="font-bold m-0 font-mono text-xs">
+            {val || 0} TV
+          </Tag>
+        );
+      }
     },
     {
       title: 'Tổng đóng góp',
@@ -239,7 +301,7 @@ export function Members() {
             title: 'Thao tác',
             key: 'action',
             align: 'center',
-            width: 110,
+            width: 100,
             render: (_, record) => {
               const canDeleteThis = isLeader || ((record.tongDongGop || 0) <= 0);
 
@@ -343,17 +405,17 @@ export function Members() {
 
   return (
     <div className="space-y-4">
-      {/* Thanh công cụ tìm kiếm và bộ lọc */}
-      <Card className="shadow-sm border-slate-200 dark:border-slate-800">
-        <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
-          <div className="flex-1 flex gap-2">
+      {/* Thanh công cụ tìm kiếm, lọc & thêm mới */}
+      <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 backdrop-blur">
+        <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
+          <div className="flex flex-wrap items-center gap-2 flex-1">
             <Input
               prefix={<SearchOutlined className="text-slate-400" />}
               placeholder="Tìm theo Ingame, ID game, Facebook..."
               value={searchText}
               onChange={e => setSearchText(e.target.value)}
               allowClear
-              className="max-w-md"
+              className="w-full sm:w-60"
             />
 
             {!isMobile ? (
@@ -377,6 +439,32 @@ export function Members() {
                 Lọc
               </Button>
             )}
+
+            {/* Nút chuyển đổi Bảng / Thẻ */}
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+              <Segmented
+                value={viewMode}
+                onChange={handleChangeViewMode}
+                options={[
+                  {
+                    label: (
+                      <span className="flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold">
+                        <AppstoreOutlined /> Dạng Thẻ
+                      </span>
+                    ),
+                    value: 'cards'
+                  },
+                  {
+                    label: (
+                      <span className="flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-semibold">
+                        <TableOutlined /> Dạng Bảng
+                      </span>
+                    ),
+                    value: 'table'
+                  }
+                ]}
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
@@ -399,134 +487,159 @@ export function Members() {
         </div>
       </Card>
 
-      {/* Hiển thị danh sách */}
+      {/* Hiển thị danh sách: Dạng Thẻ (Card View) hoặc Dạng Bảng (Table View) */}
       {isLoading ? (
         <Card><Skeleton active paragraph={{ rows: 10 }} /></Card>
-      ) : isMobile ? (
-        /* Dạng Mobile Card List */
-        <div className="space-y-3">
-          {filteredMembers.length === 0 ? (
-            <Card><Empty description="Không tìm thấy thành viên phù hợp" /></Card>
-          ) : (
-            filteredMembers.map((record) => {
-              const canDeleteThis = isLeader || ((record.tongDongGop || 0) <= 0);
+      ) : filteredMembers.length === 0 ? (
+        <Card><Empty description="Không tìm thấy thành viên phù hợp" /></Card>
+      ) : viewMode === 'cards' ? (
+        /* DẠNG THẺ (CARD VIEW) */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredMembers.map((record) => {
+            const canDeleteThis = isLeader || ((record.tongDongGop || 0) <= 0);
+            const isRankLeader = record.chucVu === 'Leader';
+            const isRankCoLeader = record.chucVu === 'Co-Leader';
+            const isRankQtv = record.chucVu === 'QTV';
 
-              const mobileMenu = {
-                items: [
-                  ...(canManageMembers
-                    ? [
-                        {
-                          key: 'edit',
-                          icon: <EditOutlined />,
-                          label: 'Chỉnh sửa',
-                          onClick: () => handleOpenEdit(record),
-                        },
-                      ]
-                    : []),
-                  ...(canManageMembers
-                    ? [
-                        {
-                          key: 'delete',
-                          icon: <DeleteOutlined />,
-                          danger: true,
-                          disabled: !canDeleteThis,
-                          label: 'Xoá thành viên',
-                          onClick: () => {
-                            Modal.confirm({
-                              title: `Xoá thành viên "${record.tenIngame}"?`,
-                              content: !canDeleteThis
-                                ? 'Co-Leader không được xoá thành viên đã có đóng góp > 0!'
-                                : 'Thao tác sẽ xoá hàng trên sheet và đánh lại STT.',
-                              okText: 'Xoá',
-                              okButtonProps: { danger: true, disabled: !canDeleteThis },
-                              cancelText: 'Huỷ',
-                              onOk: () => handleDelete(record),
-                            });
-                          },
-                        },
-                      ]
-                    : []),
-                ],
-              };
+            return (
+              <div
+                key={record.rowIndex}
+                className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 hover:border-amber-500/50 rounded-2xl p-4 shadow-sm hover:shadow-amber-500/10 transition-all duration-200 flex flex-col justify-between group"
+              >
+                <div>
+                  {/* Top Bar: STT / Avatar & Action */}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+                          isRankLeader
+                            ? 'bg-amber-500/20 text-amber-500 dark:text-amber-400 border border-amber-500/50 shadow-sm shadow-amber-500/20'
+                            : isRankCoLeader
+                            ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/50'
+                            : isRankQtv
+                            ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/50'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        {isRankLeader ? <CrownOutlined className="text-sm" /> : record.stt}
+                      </div>
 
-              return (
-                <Card
-                  key={record.rowIndex}
-                  className="shadow-sm border-slate-200 dark:border-slate-800"
-                  bodyStyle={{ padding: '14px 16px' }}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-xs text-slate-500">
-                        {record.stt}
-                      </span>
-                      <div>
-                        <div className="font-bold text-base text-slate-900 dark:text-slate-100">
+                      <div className="min-w-0">
+                        <div className="font-bold text-sm sm:text-base text-slate-800 dark:text-slate-100 truncate group-hover:text-amber-500 transition">
                           {record.tenIngame}
                         </div>
-                        <div className="mt-1">
+                        <div className="mt-0.5">
                           <RoleTag role={record.chucVu} />
                         </div>
                       </div>
                     </div>
 
-                    {canManageMembers && (
-                      <Dropdown menu={mobileMenu} trigger={['click']}>
-                        <Button type="text" icon={<MoreOutlined className="text-lg" />} />
-                      </Dropdown>
+                    {/* Huy hiệu TTV (Tuyển thành viên) - Chỉ cho 7 BQT */}
+                    {['Leader', 'Co-Leader', 'QTV'].includes(record.chucVu) && (
+                      <div
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-semibold bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/40"
+                        title="Số lượng thành viên BQT tuyển được"
+                      >
+                        <UsergroupAddOutlined className="text-purple-500 dark:text-purple-400" />
+                        <span>{record.ttv || 0} TV</span>
+                      </div>
                     )}
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-slate-400 block">ID Game:</span>
-                      <div className="font-mono font-medium text-slate-700 dark:text-slate-300 flex items-center gap-1 mt-0.5">
-                        {record.gameId || '---'}
-                        {record.isDuplicateId && (
-                          <Tag color="warning" className="mr-0 text-[10px]">Trùng</Tag>
-                        )}
-                      </div>
-                    </div>
+                  {/* ID Game & Facebook */}
+                  <div className="flex items-center justify-between text-xs py-1.5 px-2.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200 dark:border-slate-800/80 mb-3 mt-3">
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyId(record.gameId, e)}
+                      className="flex items-center gap-1.5 font-mono text-slate-500 dark:text-slate-400 hover:text-amber-500 transition cursor-pointer text-[11px]"
+                      title="Nhấp để sao chép ID"
+                    >
+                      <span>ID: <strong className="text-slate-800 dark:text-slate-200">{record.gameId || '---'}</strong></span>
+                      {copiedId === record.gameId ? (
+                        <CheckOutlined className="text-emerald-500" />
+                      ) : (
+                        <CopyOutlined className="text-[11px] opacity-60 hover:opacity-100" />
+                      )}
+                      {record.isDuplicateId && (
+                        <Tag color="warning" className="mr-0 text-[10px]">Trùng ID</Tag>
+                      )}
+                    </button>
 
-                    <div>
-                      <span className="text-slate-400 block">Facebook:</span>
-                      <div className="mt-0.5">
-                        {record.facebookUrl ? (
-                          <a
-                            href={record.facebookUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 hover:underline inline-flex items-center gap-1 truncate max-w-[130px]"
-                          >
-                            <FacebookOutlined /> {record.facebookName}
-                          </a>
-                        ) : (
-                          <span className="text-slate-400">{record.facebookName || '---'}</span>
-                        )}
-                      </div>
-                    </div>
+                    {record.facebookUrl ? (
+                      <a
+                        href={record.facebookUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 dark:text-blue-400 hover:underline text-[11px] flex items-center gap-1 font-medium"
+                      >
+                        <FacebookOutlined />
+                        <span className="truncate max-w-[90px]">{record.facebookName || 'Facebook'}</span>
+                      </a>
+                    ) : (
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500 truncate max-w-[90px]">
+                        {record.facebookName || '---'}
+                      </span>
+                    )}
                   </div>
 
-                  <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
-                    <span className="text-slate-400">Tổng đóng góp:</span>
-                    <span className="font-bold text-sm text-amber-600 dark:text-amber-400">
+                  {/* Tổng đóng góp quỹ */}
+                  <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/60 text-xs mb-3">
+                    <span className="text-slate-500 dark:text-slate-400">Tổng đóng góp:</span>
+                    <span className="font-extrabold text-sm text-amber-600 dark:text-amber-400 font-mono">
                       {(record.tongDongGop || 0).toLocaleString('vi-VN')} ₫
                     </span>
                   </div>
-                </Card>
-              );
-            })
-          )}
+                </div>
+
+                {/* Thao tác Sửa / Xoá */}
+                {canManageMembers && (
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 mt-1">
+                    <Button
+                      size="small"
+                      icon={<EditOutlined />}
+                      onClick={() => handleOpenEdit(record)}
+                      className="text-xs text-blue-400 border-slate-700 hover:border-blue-500"
+                    >
+                      Sửa
+                    </Button>
+
+                    <Popconfirm
+                      title={`Xoá thành viên "${record.tenIngame}"?`}
+                      description={
+                        !canDeleteThis
+                          ? 'Co-Leader không được xoá thành viên đã có đóng góp quỹ > 0!'
+                          : 'Thao tác sẽ xoá hàng trên sheet và đánh lại STT.'
+                      }
+                      onConfirm={() => handleDelete(record)}
+                      okText="Xoá"
+                      cancelText="Huỷ"
+                      okButtonProps={{ danger: true, disabled: !canDeleteThis }}
+                    >
+                      <Button
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        disabled={!canDeleteThis}
+                        className="text-xs"
+                      >
+                        Xoá
+                      </Button>
+                    </Popconfirm>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       ) : (
-        /* Dạng Desktop Table */
+        /* DẠNG BẢNG (TABLE VIEW) */
         <Card className="shadow-sm border-slate-200 dark:border-slate-800" bodyStyle={{ padding: 0 }}>
           <Table
             columns={columns}
             dataSource={filteredMembers}
             rowKey="rowIndex"
             pagination={{ pageSize: 15, showTotal: (total) => `Tổng số ${total} thành viên` }}
-            scroll={{ x: 750 }}
+            scroll={{ x: 850 }}
           />
         </Card>
       )}
@@ -561,25 +674,24 @@ export function Members() {
         </div>
       </Drawer>
 
-      {/* Modal / Drawer Thêm & Sửa Thành Viên */}
+      {/* Modal / Drawer thêm & chỉnh sửa thành viên */}
       {isMobile ? (
         <Drawer
-          title={editingMember ? 'Sửa Thông Tin Thành Viên' : 'Thêm Thành Viên Mới'}
+          title={editingMember ? 'Chỉnh sửa thành viên' : 'Thêm thành viên mới'}
           placement="bottom"
           open={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          height="90%"
+          height="auto"
         >
           {formContent}
         </Drawer>
       ) : (
         <Modal
-          title={editingMember ? 'Sửa Thông Tin Thành Viên' : 'Thêm Thành Viên Mới'}
+          title={editingMember ? 'Chỉnh sửa thành viên' : 'Thêm thành viên mới'}
           open={isModalOpen}
           onCancel={() => setIsModalOpen(false)}
           footer={null}
-          centered
-          width={520}
+          destroyOnClose
         >
           {formContent}
         </Modal>

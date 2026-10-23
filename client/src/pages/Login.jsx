@@ -38,31 +38,33 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950 relative overflow-hidden">
+    <div className="h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950 relative overflow-hidden select-none">
       {/* Hiệu ứng nền PUBG */}
       <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
-      <div className="w-full max-w-md relative z-10">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 text-white shadow-xl shadow-amber-500/20 mb-4 animate-bounce">
-            <CrownFilled className="text-4xl text-white" />
-          </div>
-          <Title level={2} className="!text-white font-heading font-black tracking-wider m-0">
+      <div className="w-full max-w-md relative z-10 py-2">
+        <div className="text-center mb-5">
+          <img
+            src="./logo.png"
+            alt="Clan ACE SUN"
+            className="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-4 border-amber-500 shadow-2xl shadow-amber-500/40 hover:scale-105 transition-transform"
+          />
+          <Title level={2} className="!text-white font-heading font-black tracking-wider m-0 text-2xl md:text-3xl">
             『ACE SUN』
           </Title>
-          <Text className="text-amber-400/80 font-medium tracking-widest text-xs uppercase">
+          <Text className="text-amber-400 font-bold tracking-widest text-[11px] uppercase">
             Hệ Thống Quản Trị Clan PUBG Mobile
           </Text>
         </div>
 
-        <Card className="shadow-2xl border-slate-800 bg-slate-900/80 backdrop-blur-xl">
+        <Card className="login-card shadow-2xl border border-slate-700/80 bg-slate-900/90 backdrop-blur-xl rounded-2xl">
           {errorMsg && (
             <Alert
               message="Đăng nhập thất bại"
               description={errorMsg}
               type="error"
               showIcon
-              className="mb-6 rounded-lg"
+              className="mb-5 rounded-lg"
             />
           )}
 
@@ -76,39 +78,41 @@ export function Login() {
             <Form.Item
               name="username"
               rules={[{ required: true, message: 'Vui lòng nhập tài khoản!' }]}
+              className="mb-4"
             >
               <Input
-                prefix={<UserOutlined className="text-amber-500" />}
+                prefix={<UserOutlined className="text-amber-400 text-lg mr-2" />}
                 placeholder="Tên đăng nhập (Username)"
-                className="bg-slate-800/50 border-slate-700 text-white placeholder-slate-500"
+                className="h-12 text-white font-medium"
               />
             </Form.Item>
 
             <Form.Item
               name="password"
               rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
+              className="mb-4"
             >
               <Input.Password
-                prefix={<LockOutlined className="text-amber-500" />}
+                prefix={<LockOutlined className="text-amber-400 text-lg mr-2" />}
                 placeholder="Mật khẩu"
-                className="bg-slate-800/50 border-slate-700 text-white placeholder-slate-500"
+                className="h-12 text-white font-medium"
               />
             </Form.Item>
 
-            <Form.Item className="mt-6 mb-2">
+            <Form.Item className="mt-5 mb-2">
               <Button
                 type="primary"
                 htmlType="submit"
                 loading={loading}
                 block
-                className="h-12 text-base font-bold bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 border-none shadow-lg shadow-amber-500/30"
+                className="h-12 text-base font-bold rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 border-none shadow-lg shadow-amber-500/30"
               >
                 Đăng Nhập Quản Trị
               </Button>
             </Form.Item>
           </Form>
 
-          <div className="mt-4 text-center">
+          <div className="mt-4 pt-3 border-t border-slate-800/80 text-center">
             <Text className="text-xs text-slate-400">
               Chỉ dành cho Ban quản trị (Leader, Co-Leader, QTV).
             </Text>
@@ -116,7 +120,7 @@ export function Login() {
         </Card>
 
         <div className="text-center mt-6 text-xs text-slate-500">
-          Clan ACE SUN © 2026 • Bảo mật dữ liệu trên Google Sheets
+          Clan ACE SUN © 2026 • Bảo mật dữ liệu trên Google Sheets & GitHub Pages
         </div>
       </div>
     </div>

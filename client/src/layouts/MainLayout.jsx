@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   Layout,
@@ -59,6 +59,14 @@ export function MainLayout() {
       setTimeout(() => setSyncing(false), 500);
     }
   };
+
+  // Tự động đồng bộ toàn hệ thống mỗi 1 phút (60 giây)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      handleManualSync();
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Các mục điều hướng dựa theo Role
   const menuItems = [
@@ -162,13 +170,17 @@ export function MainLayout() {
             />
           ) : null}
 
-          <Link to="/dashboard" className="flex items-center gap-2 text-inherit no-underline">
-            <span className="text-2xl drop-shadow">👑</span>
-            <div className="flex flex-col">
-              <span className="font-heading font-black tracking-wider text-base md:text-lg bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 bg-clip-text text-transparent">
+          <Link to="/dashboard" className="flex items-center gap-2.5 text-inherit no-underline select-none">
+            <img
+              src="./logo.png"
+              alt="Clan ACE SUN"
+              className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover border-2 border-amber-500/90 shadow-md shadow-amber-500/30 flex-shrink-0"
+            />
+            <div className="flex flex-col justify-center leading-tight">
+              <span className="font-heading font-black tracking-wider text-base md:text-lg bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-clip-text text-transparent">
                 『ACE SUN』
               </span>
-              <span className="text-[10px] text-slate-400 font-medium -mt-1 hidden sm:inline">
+              <span className="text-[10px] text-slate-400 font-bold tracking-wider uppercase hidden sm:inline">
                 PUBG MOBILE CLAN
               </span>
             </div>
@@ -247,9 +259,13 @@ export function MainLayout() {
         {isMobile && (
           <Drawer
             title={
-              <div className="flex items-center gap-2">
-                <span className="text-xl">👑</span>
-                <span className="font-heading font-bold text-amber-600">ACE SUN MENU</span>
+              <div className="flex items-center gap-2.5">
+                <img
+                  src="./logo.png"
+                  alt="Clan ACE SUN"
+                  className="w-7 h-7 rounded-full object-cover border border-amber-500 shadow-sm"
+                />
+                <span className="font-heading font-bold text-amber-500 tracking-wider">ACE SUN MENU</span>
               </div>
             }
             placement="left"
