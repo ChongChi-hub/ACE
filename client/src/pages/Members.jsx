@@ -45,9 +45,9 @@ export function Members() {
   const { user, activeYear } = useAuth();
   const isMobile = useIsMobile();
 
-  // Chế độ xem: 'cards' (Thẻ) hoặc 'table' (Bảng)
+  // Chế độ xem: 'cards' (Thẻ) hoặc 'table' (Bảng) - Ưu tiên Thẻ trên mobile
   const [viewMode, setViewMode] = useState(() => {
-    return localStorage.getItem('ace_sun_members_view_mode') || 'table';
+    return localStorage.getItem('ace_sun_members_view_mode') || (window.innerWidth < 768 ? 'cards' : 'table');
   });
 
   const [searchText, setSearchText] = useState('');
@@ -406,42 +406,33 @@ export function Members() {
   return (
     <div className="space-y-4">
       {/* Thanh công cụ tìm kiếm, lọc & thêm mới */}
-      <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 backdrop-blur">
-        <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch md:items-center">
-          <div className="flex flex-wrap items-center gap-2 flex-1">
+      <Card className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 backdrop-blur" bodyStyle={{ padding: '12px 14px' }}>
+        {/* Desktop Toolbar (md:): Trải dài 1 hàng */}
+        <div className="hidden md:flex gap-3 justify-between items-center">
+          <div className="flex items-center gap-2.5 flex-1">
             <Input
               prefix={<SearchOutlined className="text-slate-400" />}
               placeholder="Tìm theo Ingame, ID game, Facebook..."
               value={searchText}
               onChange={e => setSearchText(e.target.value)}
               allowClear
-              className="w-full sm:w-60"
+              className="w-64"
             />
 
-            {!isMobile ? (
-              <Select
-                value={roleFilter}
-                onChange={setRoleFilter}
-                className="w-36"
-                options={[
-                  { label: 'Tất cả chức vụ', value: 'ALL' },
-                  { label: 'Leader', value: 'Leader' },
-                  { label: 'Co-Leader', value: 'Co-Leader' },
-                  { label: 'QTV', value: 'QTV' },
-                  { label: 'Thành viên', value: 'Thành viên' },
-                ]}
-              />
-            ) : (
-              <Button
-                icon={<FilterOutlined />}
-                onClick={() => setFilterDrawerOpen(true)}
-              >
-                Lọc
-              </Button>
-            )}
+            <Select
+              value={roleFilter}
+              onChange={setRoleFilter}
+              className="w-36"
+              options={[
+                { label: 'Tất cả chức vụ', value: 'ALL' },
+                { label: 'Leader', value: 'Leader' },
+                { label: 'Co-Leader', value: 'Co-Leader' },
+                { label: 'QTV', value: 'QTV' },
+                { label: 'Thành viên', value: 'Thành viên' },
+              ]}
+            />
 
-            {/* Nút chuyển đổi Bảng / Thẻ */}
-            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700">
               <Segmented
                 value={viewMode}
                 onChange={handleChangeViewMode}
@@ -471,6 +462,7 @@ export function Members() {
             <Button
               icon={<ReloadOutlined spin={isFetching} />}
               onClick={() => refetch()}
+              title="Làm mới dữ liệu"
             />
 
             {canManageMembers && (
@@ -478,11 +470,84 @@ export function Members() {
                 type="primary"
                 icon={<UserAddOutlined />}
                 onClick={handleOpenAdd}
-                className="touch-target-btn bg-amber-500 hover:bg-amber-600 border-none font-bold"
+                className="bg-amber-500 hover:bg-amber-600 border-none font-bold"
               >
                 Thêm Thành Viên
               </Button>
             )}
+          </div>
+        </div>
+
+        {/* Mobile Toolbar (< md:): Bố cục 2 hàng gọn gàng, chuẩn ngón tay */}
+        <div className="flex md:hidden flex-col gap-2.5">
+          {/* Hàng 1: Ô tìm kiếm toàn màn hình */}
+          <Input
+            prefix={<SearchOutlined className="text-slate-400" />}
+            placeholder="Tìm theo Ingame, ID, FB..."
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            allowClear
+            className="w-full"
+            size="middle"
+          />
+
+          {/* Hàng 2: Nút Thẻ/Bảng, Lọc & Nút Thêm mới */}
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                <Segmented
+                  value={viewMode}
+                  onChange={handleChangeViewMode}
+                  options={[
+                    {
+                      label: (
+                        <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-semibold">
+                          <AppstoreOutlined /> Thẻ
+                        </span>
+                      ),
+                      value: 'cards'
+                    },
+                    {
+                      label: (
+                        <span className="flex items-center gap-1 px-2 py-0.5 text-xs font-semibold">
+                          <TableOutlined /> Bảng
+                        </span>
+                      ),
+                      value: 'table'
+                    }
+                  ]}
+                />
+              </div>
+
+              <Button
+                icon={<FilterOutlined />}
+                onClick={() => setFilterDrawerOpen(true)}
+                size="middle"
+                className={roleFilter !== 'ALL' ? 'text-amber-500 border-amber-500 font-bold' : ''}
+              >
+                {roleFilter !== 'ALL' ? roleFilter : 'Lọc'}
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <Button
+                icon={<ReloadOutlined spin={isFetching} />}
+                onClick={() => refetch()}
+                size="middle"
+              />
+
+              {canManageMembers && (
+                <Button
+                  type="primary"
+                  icon={<UserAddOutlined />}
+                  onClick={handleOpenAdd}
+                  className="bg-amber-500 hover:bg-amber-600 border-none font-bold text-xs px-2.5"
+                  size="middle"
+                >
+                  Thêm
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </Card>

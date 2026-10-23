@@ -4,6 +4,7 @@ import { Form, Input, Button, Card, Alert, Typography } from 'antd';
 import { UserOutlined, LockOutlined, CrownFilled } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import logoImg from '../assets/logo.png';
 
 const { Title, Text } = Typography;
 
@@ -38,16 +39,16 @@ export function Login() {
   };
 
   return (
-    <div className="h-screen w-full flex items-center justify-center p-4 bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950 relative overflow-hidden select-none">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950 relative overflow-x-hidden select-none">
       {/* Hiệu ứng nền PUBG */}
       <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
-      <div className="w-full max-w-md relative z-10 py-2">
+      <div className="w-full max-w-sm sm:max-w-md relative z-10 my-auto py-4">
         <div className="text-center mb-5">
           <img
-            src="./logo.png"
+            src={logoImg}
             alt="Clan ACE SUN"
-            className="w-20 h-20 rounded-full object-cover mx-auto mb-3 border-4 border-amber-500 shadow-2xl shadow-amber-500/40 hover:scale-105 transition-transform"
+            className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover mx-auto mb-3 border-4 border-amber-500 shadow-2xl shadow-amber-500/40 hover:scale-105 transition-transform"
           />
           <Title level={2} className="!text-white font-heading font-black tracking-wider m-0 text-2xl md:text-3xl">
             『ACE SUN』
@@ -119,8 +120,8 @@ export function Login() {
           </div>
         </Card>
 
-        <div className="text-center mt-6 text-xs text-slate-500">
-          Clan ACE SUN © 2026 • Bảo mật dữ liệu trên Google Sheets & GitHub Pages
+        <div className="text-center mt-6 text-[11px] sm:text-xs text-slate-500 px-4 leading-relaxed">
+          Clan ACE SUN © 2026<br className="sm:hidden" /> • Bảo mật dữ liệu Google Sheets & GitHub Pages
         </div>
       </div>
     </div>

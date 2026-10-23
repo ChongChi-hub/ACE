@@ -33,6 +33,7 @@ import { RoleTag, FundPermissionTag } from '../components/RoleTag';
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useQueryClient } from '@tanstack/react-query';
+import logoImg from '../assets/logo.png';
 
 const { Header, Sider, Content, Footer } = Layout;
 
@@ -159,28 +160,28 @@ export function MainLayout() {
   return (
     <Layout className="min-h-screen bg-slate-100 dark:bg-slate-950">
       {/* 1. Header cố định trên cùng */}
-      <Header className="sticky top-0 z-40 w-full px-3 md:px-6 h-16 flex items-center justify-between bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center gap-3">
+      <Header className="sticky top-0 z-40 w-full px-2 sm:px-4 md:px-6 h-14 sm:h-16 flex items-center justify-between bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
           {isMobile ? (
             <Button
               type="text"
               icon={<MenuOutlined />}
               onClick={() => setMobileDrawerOpen(true)}
-              className="text-slate-700 dark:text-slate-200"
+              className="text-slate-700 dark:text-slate-200 p-1.5"
             />
           ) : null}
 
-          <Link to="/dashboard" className="flex items-center gap-2.5 text-inherit no-underline select-none">
+          <Link to="/dashboard" className="flex items-center gap-1.5 sm:gap-2.5 text-inherit no-underline select-none min-w-0">
             <img
-              src="./logo.png"
+              src={logoImg}
               alt="Clan ACE SUN"
-              className="w-9 h-9 md:w-10 md:h-10 rounded-full object-cover border-2 border-amber-500/90 shadow-md shadow-amber-500/30 flex-shrink-0"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-amber-500/90 shadow-md shadow-amber-500/30 flex-shrink-0"
             />
-            <div className="flex flex-col justify-center leading-tight">
-              <span className="font-heading font-black tracking-wider text-base md:text-lg bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-clip-text text-transparent">
+            <div className="flex flex-col justify-center leading-tight min-w-0">
+              <span className="font-heading font-black tracking-wider text-sm sm:text-base md:text-lg bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-clip-text text-transparent truncate">
                 『ACE SUN』
               </span>
-              <span className="text-[10px] text-slate-400 font-bold tracking-wider uppercase hidden sm:inline">
+              <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold tracking-wider uppercase hidden xs:inline sm:inline">
                 PUBG MOBILE CLAN
               </span>
             </div>
@@ -188,13 +189,13 @@ export function MainLayout() {
         </div>
 
         {/* Thanh công cụ phải */}
-        <div className="flex items-center gap-2 md:gap-3">
-          {/* Chọn năm */}
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
+          {/* Chọn năm: gọn gàng trên mobile không bị tràn chữ */}
           <Select
             value={activeYear}
             onChange={setActiveYear}
-            options={availableYears.map(y => ({ label: `Năm ${y}`, value: y }))}
-            className="w-24 md:w-28"
+            options={availableYears.map(y => ({ label: isMobile ? y : `Năm ${y}`, value: y }))}
+            className="w-[88px] sm:w-28"
             size="middle"
           />
 
@@ -203,7 +204,7 @@ export function MainLayout() {
             <Button
               icon={<SyncOutlined spin={syncing} />}
               onClick={handleManualSync}
-              className="flex items-center gap-1 border-slate-300 dark:border-slate-700"
+              className="flex items-center justify-center border-slate-300 dark:border-slate-700 px-2 sm:px-3"
             >
               <span className="hidden md:inline text-xs text-slate-500 dark:text-slate-400">
                 {lastSyncTime}
@@ -216,13 +217,14 @@ export function MainLayout() {
             type="text"
             icon={isDark ? <SunOutlined className="text-amber-400" /> : <MoonOutlined className="text-slate-600" />}
             onClick={toggleTheme}
-            className="rounded-full"
+            className="rounded-full flex items-center justify-center p-2"
           />
 
           {/* User Profile Dropdown */}
           <Dropdown menu={{ items: userDropdownItems }} trigger={['click']} placement="bottomRight">
-            <div className="flex items-center gap-2 cursor-pointer p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <div className="flex items-center gap-1.5 cursor-pointer p-0.5 sm:p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition">
               <Avatar
+                size={isMobile ? 'small' : 'default'}
                 style={{ backgroundColor: user?.role === 'Leader' ? '#d97706' : '#2563eb' }}
                 icon={<UserOutlined />}
               />
@@ -261,7 +263,7 @@ export function MainLayout() {
             title={
               <div className="flex items-center gap-2.5">
                 <img
-                  src="./logo.png"
+                  src={logoImg}
                   alt="Clan ACE SUN"
                   className="w-7 h-7 rounded-full object-cover border border-amber-500 shadow-sm"
                 />

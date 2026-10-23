@@ -40,9 +40,9 @@ import dayjs from 'dayjs';
 export function Fund() {
   const { user, activeYear } = useAuth();
 
-  // Chế độ xem: 'cards' (Thẻ) hoặc 'table' (Bảng)
+  // Chế độ xem: 'cards' (Thẻ) hoặc 'table' (Bảng) - Ưu tiên Thẻ trên mobile
   const [viewMode, setViewMode] = useState(() => {
-    return localStorage.getItem('ace_sun_fund_view_mode') || 'cards';
+    return localStorage.getItem('ace_sun_fund_view_mode') || (window.innerWidth < 768 ? 'cards' : 'table');
   });
 
   const [searchText, setSearchText] = useState('');
@@ -331,12 +331,13 @@ export function Fund() {
 
   return (
     <div className="space-y-4">
-      {/* 1. Header Toolbar: Toàn bộ nằm gọn gàng trên CÙNG 1 HÀNG */}
+      {/* 1. Header Toolbar */}
       <Card
         className="shadow-sm border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 backdrop-blur"
-        bodyStyle={{ padding: '12px 16px' }}
+        bodyStyle={{ padding: '12px 14px' }}
       >
-        <div className="flex items-center justify-between gap-3 overflow-x-auto flex-nowrap py-0.5">
+        {/* Desktop Toolbar (md:): Toàn bộ trên 1 hàng phẳng phiu duy nhất */}
+        <div className="hidden md:flex items-center justify-between gap-3 overflow-x-auto flex-nowrap py-0.5">
           {/* Nhóm bên trái: Quyền, Chế độ xem & Năm */}
           <div className="flex items-center gap-2.5 flex-shrink-0 flex-nowrap">
             {canEditFund ? (
@@ -416,6 +417,82 @@ export function Fund() {
             >
               Báo cáo nhanh
             </Button>
+
+            <Button
+              icon={<ReloadOutlined spin={isFetching} />}
+              onClick={() => refetch()}
+              size="middle"
+              className="flex-shrink-0"
+              title="Làm mới dữ liệu"
+            />
+          </div>
+        </div>
+
+        {/* Mobile Toolbar (< md:): Bố cục 2 hàng thông minh, không bị che khuất */}
+        <div className="flex md:hidden flex-col gap-2.5">
+          {/* Hàng 1: Chuyển dạng Thẻ/Bảng & Nút Báo cáo nhanh */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700">
+              <Segmented
+                value={viewMode}
+                onChange={handleChangeViewMode}
+                options={[
+                  {
+                    label: (
+                      <span className="flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold">
+                        <AppstoreOutlined /> Thẻ
+                      </span>
+                    ),
+                    value: 'cards'
+                  },
+                  {
+                    label: (
+                      <span className="flex items-center gap-1 px-2.5 py-0.5 text-xs font-semibold">
+                        <TableOutlined /> Bảng
+                      </span>
+                    ),
+                    value: 'table'
+                  }
+                ]}
+              />
+            </div>
+
+            <Button
+              type="primary"
+              icon={<NotificationOutlined />}
+              onClick={handleOpenReportModal}
+              className="bg-amber-500 hover:bg-amber-600 border-none font-bold text-xs flex items-center shadow-sm px-3"
+              size="middle"
+            >
+              Báo cáo nhanh
+            </Button>
+          </div>
+
+          {/* Hàng 2: Tìm kiếm, Lọc tháng & Nút Reload */}
+          <div className="flex items-center gap-2">
+            <Input
+              prefix={<SearchOutlined className="text-slate-400" />}
+              placeholder="Tìm ingame, ID..."
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              allowClear
+              className="flex-1"
+              size="middle"
+            />
+
+            <Select
+              value={unpaidMonthFilter}
+              onChange={setUnpaidMonthFilter}
+              className="w-28 flex-shrink-0"
+              size="middle"
+              options={[
+                { label: 'Tất cả', value: 'ALL' },
+                ...Array.from({ length: 12 }, (_, i) => ({
+                  label: `Chưa T${i + 1}`,
+                  value: String(i + 1)
+                }))
+              ]}
+            />
 
             <Button
               icon={<ReloadOutlined spin={isFetching} />}
