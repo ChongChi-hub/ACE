@@ -688,6 +688,7 @@ export function Fund() {
 
       {/* MODAL BÁO CÁO NHANH QUỸ THÁNG */}
       <Modal
+        centered
         title={
           <div className="flex items-center gap-2">
             <NotificationOutlined className="text-amber-500 text-xl" />

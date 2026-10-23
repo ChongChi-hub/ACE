@@ -39,11 +39,12 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950 relative overflow-x-hidden select-none">
+    <div className="flex-1 w-full min-h-[100dvh] flex flex-col items-center justify-center p-4 sm:p-6 bg-gradient-to-br from-slate-900 via-slate-950 to-amber-950 relative overflow-y-auto select-none">
       {/* Hiệu ứng nền PUBG */}
       <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#f59e0b_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
-      <div className="w-full max-w-sm sm:max-w-md relative z-10 my-auto py-4">
+      {/* Form đăng nhập luôn nằm chính giữa màn hình */}
+      <div className="w-full max-w-sm sm:max-w-md relative z-10 flex flex-col items-center my-0">
         <div className="text-center mb-5">
           <img
             src={logoImg}
@@ -58,7 +59,7 @@ export function Login() {
           </Text>
         </div>
 
-        <Card className="login-card shadow-2xl border border-slate-700/80 bg-slate-900/90 backdrop-blur-xl rounded-2xl">
+        <Card className="login-card w-full shadow-2xl border border-slate-700/80 bg-slate-900/90 backdrop-blur-xl rounded-2xl">
           {errorMsg && (
             <Alert
               message="Đăng nhập thất bại"

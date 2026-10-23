@@ -752,6 +752,7 @@ export function Members() {
         </Drawer>
       ) : (
         <Modal
+          centered
           title={editingMember ? 'Chỉnh sửa thành viên' : 'Thêm thành viên mới'}
           open={isModalOpen}
           onCancel={() => setIsModalOpen(false)}

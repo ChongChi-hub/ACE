@@ -295,7 +295,7 @@ export function MainLayout() {
         )}
 
         {/* 4. Main Page Content */}
-        <Content className="p-3 sm:p-5 md:p-8 max-w-7xl w-full mx-auto pb-24 md:pb-12">
+        <Content className="p-3 sm:p-5 md:p-8 max-w-7xl w-full mx-auto pb-32 md:pb-12">
           {/* Breadcrumb & Tiêu đề trang */}
           <div className="mb-5 flex flex-col gap-1">
             <Breadcrumb
