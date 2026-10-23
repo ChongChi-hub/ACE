@@ -122,15 +122,16 @@ export function Members() {
   });
 
   const recordTtvMutation = useMutation({
-    mutationFn: ({ rowIndex, month, amount }) =>
+    mutationFn: (payload) =>
       api.post(`/fund/record?year=${activeYear}`, {
-        rowIndex,
+        rowIndex: payload.rowIndex,
+        tenIngame: payload.tenIngame,
         field: 'ttv',
-        month: month || ttvMonth,
-        amount
+        month: payload.month || ttvMonth,
+        amount: payload.amount
       }),
     onSuccess: (res) => {
-      message.success(res.data.message || 'Cập nhật số TV tuyển thành công!');
+      message.success(res.data?.message || res.message || 'Cập nhật số TV tuyển thành công!');
       queryClient.invalidateQueries({ queryKey: ['members', activeYear] });
       queryClient.invalidateQueries({ queryKey: ['fund', activeYear] });
       queryClient.invalidateQueries({ queryKey: ['ttv-race', activeYear] });
@@ -138,7 +139,7 @@ export function Members() {
       setTtvTargetMember(null);
     },
     onError: (err) => {
-      message.error(err.response?.data?.message || 'Không thể cập nhật TTV!');
+      message.error(err.message || 'Không thể cập nhật TTV!');
     }
   });
 

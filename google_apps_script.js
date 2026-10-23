@@ -1343,8 +1343,23 @@ function handleRecordTtv(params) {
   var value = parseInt(params.value, 10);
   if (isNaN(value) || value < 0) value = 0;
 
-  if (!tenIngame || isNaN(month) || month < 1 || month > 12) {
-    return { success: false, message: 'Dữ liệu không hợp lệ (thiếu Tên Ingame hoặc Tháng)' };
+  // Nếu thiếu tenIngame mà có rowIndex, tự động lấy tenIngame từ sheet Quỹ
+  if (!tenIngame && params.rowIndex) {
+    try {
+      var fundSheet = getSpreadsheet().getSheetByName(year);
+      if (fundSheet) {
+        var fundCols = detectColumns(fundSheet);
+        tenIngame = String(fundSheet.getRange(parseInt(params.rowIndex, 10), fundCols.tenIngame).getValue() || '').trim();
+      }
+    } catch (e) {}
+  }
+
+  if (isNaN(month) || month < 1 || month > 12) {
+    month = new Date().getMonth() + 1;
+  }
+
+  if (!tenIngame) {
+    return { success: false, message: 'Dữ liệu không hợp lệ (thiếu Tên Ingame)' };
   }
 
   var sheet = getTtvSheet(year);

@@ -224,6 +224,7 @@ const api = {
         const monthNum = body.month || (new Date().getMonth() + 1);
         const res = await callAppsScript('record_ttv', {
           year,
+          rowIndex: body.rowIndex,
           tenIngame: body.tenIngame || body.member,
           month: monthNum,
           value: body.amount ?? body.value ?? 0
