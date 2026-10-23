@@ -29,7 +29,7 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { RoleTag, FundPermissionTag } from '../components/RoleTag';
+import { RoleTag, FundPermissionTag, MemberPermissionTag } from '../components/RoleTag';
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useQueryClient } from '@tanstack/react-query';
@@ -69,18 +69,25 @@ export function MainLayout() {
     return () => clearInterval(timer);
   }, []);
 
-  // Các mục điều hướng dựa theo Role
+  // Quyền quản lý thành viên: Chỉ Leader hoặc người được Leader cấp quyền mới thấy menu và thao tác Thành viên
+  const canSeeMembers = user?.role === 'Leader' || user?.canManageMembers === true;
+
+  // Các mục điều hướng dựa theo Role & Quyền hạn
   const menuItems = [
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: 'Dashboard',
     },
-    {
-      key: '/members',
-      icon: <TeamOutlined />,
-      label: 'Thành viên',
-    },
+    ...(canSeeMembers
+      ? [
+          {
+            key: '/members',
+            icon: <TeamOutlined />,
+            label: 'Thành viên',
+          },
+        ]
+      : []),
     {
       key: '/fund',
       icon: <DollarCircleOutlined />,
@@ -137,6 +144,7 @@ export function MainLayout() {
           <div className="mt-2 flex flex-wrap gap-1">
             <RoleTag role={user?.role} />
             <FundPermissionTag canEditFund={user?.canEditFund} />
+            <MemberPermissionTag canManageMembers={user?.canManageMembers} />
           </div>
         </div>
       ),
@@ -282,6 +290,7 @@ export function MainLayout() {
               <div className="flex flex-wrap gap-1">
                 <RoleTag role={user?.role} />
                 <FundPermissionTag canEditFund={user?.canEditFund} />
+                <MemberPermissionTag canManageMembers={user?.canManageMembers} />
               </div>
             </div>
             <Menu
@@ -329,15 +338,17 @@ export function MainLayout() {
             <span className="text-[11px] mt-0.5">Tổng quan</span>
           </button>
 
-          <button
-            onClick={() => navigate('/members')}
-            className={`flex flex-col items-center justify-center py-1 px-3 border-none bg-transparent cursor-pointer transition ${
-              currentPath === '/members' ? 'text-amber-500 font-bold' : 'text-slate-500 dark:text-slate-400'
-            }`}
-          >
-            <TeamOutlined className="text-lg" />
-            <span className="text-[11px] mt-0.5">Thành viên</span>
-          </button>
+          {canSeeMembers && (
+            <button
+              onClick={() => navigate('/members')}
+              className={`flex flex-col items-center justify-center py-1 px-3 border-none bg-transparent cursor-pointer transition ${
+                currentPath === '/members' ? 'text-amber-500 font-bold' : 'text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              <TeamOutlined className="text-lg" />
+              <span className="text-[11px] mt-0.5">Thành viên</span>
+            </button>
+          )}
 
           <button
             onClick={() => navigate('/fund')}

@@ -55,3 +55,16 @@ export function FundPermissionTag({ canEditFund }) {
     </Tag>
   );
 }
+
+export function MemberPermissionTag({ canManageMembers }) {
+  if (!canManageMembers) return null;
+  return (
+    <Tag
+      color="purple"
+      icon={<UserOutlined />}
+      className="font-medium bg-purple-50 dark:bg-purple-950/40 border-purple-300 text-purple-700 dark:text-purple-300"
+    >
+      Quản lý thành viên
+    </Tag>
+  );
+}

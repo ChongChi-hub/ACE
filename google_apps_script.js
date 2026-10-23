@@ -57,7 +57,7 @@ function handleRequest(e, method) {
     // Dùng LockService để ngăn chặn ghi đè đồng thời (race condition)
     var lock = LockService.getScriptLock();
     var hasLock = false;
-    var writeActions = ['add_member', 'edit_member', 'delete_member', 'record_fund', 'create_account', 'update_account_fund_permission', 'update_account_status', 'reset_password', 'delete_account', 'change_password'];
+    var writeActions = ['add_member', 'edit_member', 'delete_member', 'record_fund', 'create_account', 'update_account_fund_permission', 'update_account_member_permission', 'update_account_status', 'reset_password', 'delete_account', 'change_password'];
     
     if (writeActions.indexOf(action) !== -1) {
       try {
@@ -114,6 +114,10 @@ function handleRequest(e, method) {
         result = handleUpdateFundPermission(params);
         break;
 
+      case 'update_account_member_permission':
+        result = handleUpdateMemberPermission(params);
+        break;
+
       case 'update_account_status':
         result = handleUpdateAccountStatus(params);
         break;
@@ -132,6 +136,10 @@ function handleRequest(e, method) {
 
       case 'fix_formulas':
         result = fixAllTotalFormulas();
+        break;
+
+      case 'inspect_ttv':
+        result = handleInspectTtv(params.year || '2026');
         break;
 
       default:
@@ -200,12 +208,18 @@ function ensureAccountSheet() {
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_ACCOUNT);
   }
-  var headers = ['Username', 'PasswordHash', 'Tên Ingame', 'Trạng thái', 'Ngày tạo', 'Lần đăng nhập cuối', 'Quyền ghi quỹ'];
+  var headers = ['Username', 'PasswordHash', 'Tên Ingame', 'Trạng thái', 'Ngày tạo', 'Lần đăng nhập cuối', 'Quyền ghi quỹ', 'Quyền thành viên'];
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(headers);
     // Tạo tài khoản Leader mặc định: binhbinh / 12345678
     var adminHash = hashPassword('12345678');
-    sheet.appendRow(['binhbinh', adminHash, '『ACE』TỷTỷ', 'active', new Date().toISOString(), '', 'TRUE']);
+    sheet.appendRow(['binhbinh', adminHash, '『ACE』TỷTỷ', 'active', new Date().toISOString(), '', 'TRUE', 'TRUE']);
+  } else {
+    // Đảm bảo tiêu đề cột 8 là "Quyền thành viên"
+    var headerRow = sheet.getRange(1, 1, 1, Math.max(8, sheet.getLastColumn())).getValues()[0];
+    if (!headerRow[7] || String(headerRow[7]).trim() === '') {
+      sheet.getRange(1, 8).setValue('Quyền thành viên');
+    }
   }
   return sheet;
 }
@@ -404,7 +418,19 @@ function handleLogin(params) {
   } else if (typeof gVal === 'string') {
     canEditFund = gVal.trim().toUpperCase() === 'TRUE';
   }
-  if (role === 'Leader') canEditFund = true;
+
+  var canManageMembers = false;
+  var mVal = found[7];
+  if (typeof mVal === 'boolean') {
+    canManageMembers = mVal;
+  } else if (typeof mVal === 'string') {
+    canManageMembers = mVal.trim().toUpperCase() === 'TRUE';
+  }
+
+  if (role === 'Leader') {
+    canEditFund = true;
+    canManageMembers = true;
+  }
 
   appendLog(username, 'Đăng nhập', 'Hệ thống', '', 'Thành công');
 
@@ -415,7 +441,8 @@ function handleLogin(params) {
       tenIngame: tenIngame,
       role: role,
       status: status,
-      canEditFund: canEditFund
+      canEditFund: canEditFund,
+      canManageMembers: canManageMembers
     },
     message: 'Đăng nhập thành công'
   };
@@ -919,10 +946,19 @@ function handleGetAccounts(year) {
       canEditFund = gVal.trim().toUpperCase() === 'TRUE';
     }
 
+    var canManageMembers = false;
+    var mVal = row[7];
+    if (typeof mVal === 'boolean') {
+      canManageMembers = mVal;
+    } else if (typeof mVal === 'string') {
+      canManageMembers = mVal.trim().toUpperCase() === 'TRUE';
+    }
+
     var role = memberRoleMap[tenIngame] || 'Thành viên';
-    if (username.toLowerCase() === 'binhbinh' || username.toLowerCase() === 'admin') {
+    if (username.toLowerCase() === 'binhbinh' || username.toLowerCase() === 'admin' || role === 'Leader') {
       role = 'Leader';
       canEditFund = true;
+      canManageMembers = true;
     }
 
     accounts.push({
@@ -933,6 +969,7 @@ function handleGetAccounts(year) {
       createdAt: createdAt,
       lastLogin: lastLogin,
       canEditFund: canEditFund,
+      canManageMembers: canManageMembers,
       role: role
     });
   }
@@ -945,6 +982,7 @@ function handleCreateAccount(params) {
   var password = (params.password || '').trim();
   var tenIngame = sanitizeValue((params.tenIngame || '').trim());
   var canEditFund = params.canEditFund === true || params.canEditFund === 'true';
+  var canManageMembers = params.canManageMembers === true || params.canManageMembers === 'true';
 
   if (!username || !password || !tenIngame) {
     return { success: false, message: 'Vui lòng điền đủ Username, Mật khẩu và Tên Ingame' };
@@ -967,11 +1005,12 @@ function handleCreateAccount(params) {
     'active',
     new Date().toISOString(),
     '',
-    canEditFund ? 'TRUE' : 'FALSE'
+    canEditFund ? 'TRUE' : 'FALSE',
+    canManageMembers ? 'TRUE' : 'FALSE'
   ]);
 
   var actor = params.actor || 'Ban Quản Trị';
-  appendLog(actor, 'Tạo tài khoản', username, '', { tenIngame: tenIngame, canEditFund: canEditFund });
+  appendLog(actor, 'Tạo tài khoản', username, '', { tenIngame: tenIngame, canEditFund: canEditFund, canManageMembers: canManageMembers });
 
   return { success: true, message: 'Tạo tài khoản thành công' };
 }
@@ -989,6 +1028,25 @@ function handleUpdateFundPermission(params) {
       var actor = params.actor || 'Ban Quản Trị';
       appendLog(actor, 'Phân quyền ghi quỹ', username, !canEditFund, canEditFund);
       return { success: true, message: 'Đã cập nhật quyền ghi quỹ' };
+    }
+  }
+
+  return { success: false, message: 'Không tìm thấy tài khoản' };
+}
+
+function handleUpdateMemberPermission(params) {
+  var username = (params.username || '').trim();
+  var canManageMembers = params.canManageMembers === true || params.canManageMembers === 'true';
+
+  var sheet = ensureAccountSheet();
+  var data = sheet.getDataRange().getValues();
+
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim().toLowerCase() === username.toLowerCase()) {
+      sheet.getRange(i + 1, 8).setValue(canManageMembers ? 'TRUE' : 'FALSE');
+      var actor = params.actor || 'Ban Quản Trị';
+      appendLog(actor, 'Phân quyền quản lý thành viên', username, !canManageMembers, canManageMembers);
+      return { success: true, message: 'Đã cập nhật quyền quản lý thành viên' };
     }
   }
 

@@ -143,8 +143,8 @@ export function Members() {
     localStorage.setItem('ace_sun_members_view_mode', val);
   };
 
-  // Quyền thêm/sửa/xoá
-  const canManageMembers = ['Leader', 'Co-Leader'].includes(user?.role);
+  // Quyền thêm/sửa/xoá: Leader hoặc tài khoản được Leader cấp quyền quản lý thành viên
+  const canManageMembers = user?.role === 'Leader' || user?.canManageMembers === true;
   const isLeader = user?.role === 'Leader';
 
   const handleOpenAdd = () => {

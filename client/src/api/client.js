@@ -270,6 +270,17 @@ const api = {
       return { data: { success: true, data: res, ...res } };
     }
 
+    // Cập nhật quyền quản lý thành viên
+    const memberPermMatch = path.match(/^\/accounts\/([^/]+)\/member-permission$/);
+    if (memberPermMatch) {
+      const username = decodeURIComponent(memberPermMatch[1]);
+      const res = await callAppsScript('update_account_member_permission', {
+        username,
+        canManageMembers: body.canManageMembers
+      });
+      return { data: { success: true, data: res, ...res } };
+    }
+
     // Cập nhật trạng thái tài khoản
     const statusMatch = path.match(/^\/accounts\/([^/]+)\/status$/);
     if (statusMatch) {

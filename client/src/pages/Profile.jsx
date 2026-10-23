@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Button, Avatar, Descriptions, Tag, Typography } from 'antd';
 import { UserOutlined, KeyOutlined, CrownFilled, SafetyOutlined } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
-import { RoleTag, FundPermissionTag } from '../components/RoleTag';
+import { RoleTag, FundPermissionTag, MemberPermissionTag } from '../components/RoleTag';
 import { ChangePasswordModal } from '../components/ChangePasswordModal';
 
 const { Title, Text } = Typography;
@@ -26,9 +26,10 @@ export function Profile() {
         </Title>
         <Text type="secondary" className="font-mono text-sm">@{user?.username}</Text>
 
-        <div className="mt-3 flex justify-center items-center gap-2">
+        <div className="mt-3 flex justify-center items-center gap-2 flex-wrap">
           <RoleTag role={user?.role} />
           <FundPermissionTag canEditFund={user?.canEditFund} />
+          <MemberPermissionTag canManageMembers={user?.canManageMembers} />
         </div>
       </Card>
 
@@ -49,6 +50,15 @@ export function Profile() {
               <Tag color="success">Được Leader cấp phép</Tag>
             ) : (
               <Tag color="default">Chỉ xem (Chưa được cấp phép)</Tag>
+            )}
+          </Descriptions.Item>
+          <Descriptions.Item label="Quyền Quản Lý Thành Viên">
+            {user?.role === 'Leader' ? (
+              <Tag color="purple">Toàn quyền (Leader)</Tag>
+            ) : user?.canManageMembers ? (
+              <Tag color="purple">Được Leader cấp phép</Tag>
+            ) : (
+              <Tag color="default">Không có quyền (Chưa được cấp phép)</Tag>
             )}
           </Descriptions.Item>
         </Descriptions>

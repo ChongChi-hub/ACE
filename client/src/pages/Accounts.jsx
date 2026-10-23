@@ -89,6 +89,18 @@ export function Accounts() {
     }
   });
 
+  const memberPermMutation = useMutation({
+    mutationFn: ({ username, canManageMembers }) =>
+      api.patch(`/accounts/${username}/member-permission`, { canManageMembers }),
+    onSuccess: (res) => {
+      message.success(res.data.message || 'Cập nhật quyền quản lý thành viên thành công!');
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+    },
+    onError: (err) => {
+      message.error(err.response?.data?.message || 'Lỗi cập nhật quyền quản lý thành viên!');
+    }
+  });
+
   const statusMutation = useMutation({
     mutationFn: ({ username, status }) =>
       api.patch(`/accounts/${username}/status`, { status }),
@@ -169,6 +181,36 @@ export function Accounts() {
             <Switch
               checked={canEdit}
               disabled={isSelfLeader || fundPermMutation.isPending}
+              checkedChildren="Bật"
+              unCheckedChildren="Tắt"
+            />
+          </Popconfirm>
+        );
+      },
+    },
+    {
+      title: 'Quyền thành viên',
+      dataIndex: 'canManageMembers',
+      key: 'canManageMembers',
+      render: (canManage, record) => {
+        const isSelfLeader = record.role === 'Leader';
+
+        return (
+          <Popconfirm
+            title={`Bạn có chắc muốn ${canManage ? 'thu hồi' : 'cấp'} quyền quản lý thành viên cho "${record.username}"?`}
+            onConfirm={() =>
+              memberPermMutation.mutate({
+                username: record.username,
+                canManageMembers: !canManage
+              })
+            }
+            disabled={isSelfLeader}
+            okText="Xác nhận"
+            cancelText="Huỷ"
+          >
+            <Switch
+              checked={canManage}
+              disabled={isSelfLeader || memberPermMutation.isPending}
               checkedChildren="Bật"
               unCheckedChildren="Tắt"
             />
@@ -365,6 +407,29 @@ export function Accounts() {
                     />
                   </Popconfirm>
                 </div>
+
+                <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/60 flex justify-between items-center text-xs">
+                  <span className="text-slate-400">Quản lý thành viên:</span>
+                  <Popconfirm
+                    title={`Bạn có chắc muốn ${acc.canManageMembers ? 'thu hồi' : 'cấp'} quyền quản lý thành viên cho "${acc.username}"?`}
+                    onConfirm={() =>
+                      memberPermMutation.mutate({
+                        username: acc.username,
+                        canManageMembers: !acc.canManageMembers
+                      })
+                    }
+                    disabled={isSelfLeader}
+                    okText="Xác nhận"
+                    cancelText="Huỷ"
+                  >
+                    <Switch
+                      checked={acc.canManageMembers}
+                      disabled={isSelfLeader || memberPermMutation.isPending}
+                      checkedChildren="Bật"
+                      unCheckedChildren="Tắt"
+                    />
+                  </Popconfirm>
+                </div>
               </Card>
             );
           })}
@@ -433,14 +498,25 @@ export function Accounts() {
             <Input.Password placeholder="Nhập mật khẩu" />
           </Form.Item>
 
-          <Form.Item
-            name="canEditFund"
-            label="Cấp quyền ghi quỹ ban đầu"
-            valuePropName="checked"
-            initialValue={false}
-          >
-            <Switch checkedChildren="Có" unCheckedChildren="Không" />
-          </Form.Item>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Form.Item
+              name="canEditFund"
+              label="Quyền ghi quỹ ban đầu"
+              valuePropName="checked"
+              initialValue={false}
+            >
+              <Switch checkedChildren="Có" unCheckedChildren="Không" />
+            </Form.Item>
+
+            <Form.Item
+              name="canManageMembers"
+              label="Quyền QL thành viên"
+              valuePropName="checked"
+              initialValue={false}
+            >
+              <Switch checkedChildren="Có" unCheckedChildren="Không" />
+            </Form.Item>
+          </div>
 
           <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button onClick={() => setCreateModalOpen(false)}>Huỷ</Button>
