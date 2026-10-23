@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -30,7 +30,7 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
-          <BrowserRouter>
+          <HashRouter>
             <Routes>
               {/* Public route */}
               <Route path="/login" element={<Login />} />
@@ -55,7 +55,7 @@ export function App() {
                 </Route>
               </Route>
             </Routes>
-          </BrowserRouter>
+          </HashRouter>
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
