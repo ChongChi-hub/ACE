@@ -1,0 +1,16 @@
+{
+  "short_name": "ACE SUN",
+  "name": "Clan ACE SUN PUBG Mobile Admin",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f172a",
+  "theme_color": "#d97706",
+  "display": "standalone",
+  "orientation": "portrait"
+}
