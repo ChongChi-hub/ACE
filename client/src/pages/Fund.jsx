@@ -176,6 +176,7 @@ export function Fund() {
     if (!editingCell) return;
     recordFundMutation.mutate({
       rowIndex: editingCell.rowIndex,
+      tenIngame: editingCell.member,
       field: editingCell.field,
       month: values.month || currentRealMonth,
       amount: values.amount ?? 0

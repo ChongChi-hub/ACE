@@ -154,6 +154,7 @@ export function Members() {
     const newVal = Math.max(0, (ttvTargetMember.ttv || 0) + delta);
     recordTtvMutation.mutate({
       rowIndex: ttvTargetMember.rowIndex,
+      tenIngame: ttvTargetMember.tenIngame,
       month: ttvMonth,
       amount: newVal
     });
@@ -163,6 +164,7 @@ export function Members() {
     if (!ttvTargetMember) return;
     recordTtvMutation.mutate({
       rowIndex: ttvTargetMember.rowIndex,
+      tenIngame: ttvTargetMember.tenIngame,
       month: ttvMonth,
       amount: ttvInputVal
     });

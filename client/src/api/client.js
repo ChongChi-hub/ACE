@@ -217,15 +217,30 @@ const api = {
       return { data: { success: true, data: res, ...res } };
     }
 
-    // Ghi quỹ
+    // Ghi quỹ hoặc ghi nhận TTV
     if (path === '/fund/record') {
       const year = params.get('year') || '2026';
+      if (body.field === 'ttv') {
+        const monthNum = body.month || (new Date().getMonth() + 1);
+        const res = await callAppsScript('record_ttv', {
+          year,
+          tenIngame: body.tenIngame || body.member,
+          month: monthNum,
+          value: body.amount ?? body.value ?? 0
+        });
+        return { data: { success: true, data: res, ...res } };
+      }
       const res = await callAppsScript('record_fund', {
         year,
         rowIndex: body.rowIndex,
         field: body.field,
         amount: body.amount
       });
+      return { data: { success: true, data: res, ...res } };
+    }
+
+    if (path === '/fund/fix-formulas') {
+      const res = await callAppsScript('fix_formulas', {});
       return { data: { success: true, data: res, ...res } };
     }
 

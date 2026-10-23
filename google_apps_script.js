@@ -746,6 +746,12 @@ function handleRecordFund(params) {
     cell.setValue('');
   }
 
+  // Luôn khôi phục và bảo vệ công thức cột Tổng Đóng Góp cho dòng này
+  var mStartColLetter = colToLetter(cols.months[1]);
+  var tienPhatLetter = colToLetter(cols.tienPhat);
+  var totalFormula = '=SUM($' + mStartColLetter + rowIndex + ':$' + tienPhatLetter + rowIndex + ')';
+  sheet.getRange(rowIndex, cols.tongDongGop).setFormula(totalFormula);
+
   var memberName = sheet.getRange(rowIndex, cols.tenIngame).getValue();
   var actionDesc = field === 'ttv' ? 'Cập nhật số TV tuyển (TTV)' : 'Cập nhật quỹ (' + field + ')';
   appendLog(actor, actionDesc, memberName + ' (Dòng ' + rowIndex + ')', oldVal, amount);
